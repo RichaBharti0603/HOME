@@ -3,7 +3,12 @@ import React, { useState, useRef, useEffect } from 'react';
 
 const ChatInterface = () => {
   const [messages, setMessages] = useState([
-    { id: 1, sender: 'ai', content: 'Hello! I\'m your private AI assistant. I can help with coding, debugging, documentation, and more - all without exposing sensitive data. What can I help you with today?', timestamp: new Date() }
+    {
+      id: 1,
+      sender: 'ai',
+      content: "Hello! I'm your private AI assistant. I can help with coding, debugging, documentation, and more - all without exposing sensitive data. What can I help you with today?",
+      timestamp: new Date()
+    }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -31,17 +36,58 @@ const ChatInterface = () => {
     setInput('');
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiMessage = {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/ask_stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: input,
+          user_id: "default_user",
+          stream: true
+        }),
+      });
+
+      if (!response.body) throw new Error("No response body from backend.");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let aiMessage = {
         id: messages.length + 2,
         sender: 'ai',
-        content: `I understand you're asking about: "${input}". As your private AI, I'll process this request securely without any data leaving your environment. Here's what I can help you with: debugging code, generating documentation, or analyzing logs.`,
+        content: "",
         timestamp: new Date()
       };
+
+      // Append AI message placeholder
       setMessages(prev => [...prev, aiMessage]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        aiMessage.content += chunk;
+
+        // Update messages live
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = aiMessage;
+          return updated;
+        });
+      }
+
+    } catch (err) {
+      console.error(err);
+      const errorMessage = {
+        id: messages.length + 2,
+        sender: 'ai',
+        content: "Error: Unable to get response from AI.",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const quickPrompts = [
@@ -98,21 +144,15 @@ const ChatInterface = () => {
 
       {/* Chat Messages */}
       <div className="chat-messages card">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`message ${message.sender}`}
-          >
+        {messages.map(message => (
+          <div key={message.id} className={`message ${message.sender}`}>
             <div className="message-content">
               <div className="message-sender">
                 {message.sender === 'ai' ? 'AI Assistant' : 'You'}
               </div>
               <div className="message-text">{message.content}</div>
               <div className="message-timestamp">
-                {message.timestamp.toLocaleTimeString([], { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                })}
+                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
           </div>
@@ -122,9 +162,7 @@ const ChatInterface = () => {
             <div className="message-content">
               <div className="message-text">
                 <div className="typing-indicator">
-                  <span></span>
-                  <span></span>
-                  <span></span>
+                  <span></span><span></span><span></span>
                 </div>
               </div>
             </div>

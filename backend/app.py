@@ -1,9 +1,10 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from fastapi.responses import StreamingResponse
 
 from backend.personalization.store import load_profile, save_profile, append_history
-from backend.rag.retriever import get_answer as get_rag_answer
+from backend.rag.retriever import get_answer_stream
 from backend.models.local_llm import generate_streaming_answer
 from backend.api.server import app
 

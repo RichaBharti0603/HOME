@@ -33,3 +33,13 @@ def run_llm_stream(
     response = generate_response(prompt=prompt, context=context)
     for token in response.split():
         yield token + " "
+
+# ---- Compatibility alias ----
+def generate_streaming_answer(
+    prompt: str,
+    context: Optional[str] = None
+) -> Generator[str, None, None]:
+    """
+    Backward-compatible streaming API expected by server layer.
+    """
+    return run_llm_stream(prompt=prompt, context=context)

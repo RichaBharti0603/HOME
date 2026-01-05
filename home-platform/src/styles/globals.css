@@ -761,3 +761,30 @@ p {
     text-align: center;
   }
 }
+.ai-assistant-page .container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.card {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0px 4px 12px rgba(0,0,0,0.05);
+}
+
+.ai-features-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ai-image img {
+  object-fit: cover;
+}
+
+.chat-card {
+  margin-top: 10px;
+}
+
