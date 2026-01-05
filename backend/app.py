@@ -1,18 +1,19 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+import os
+from azure.ai.openai import OpenAIClient
+from azure.core.credentials import AzureKeyCredential
+import asyncio
 
-from backend.personalization.store import load_profile, save_profile, append_history
-from backend.rag.retriever import get_answer_stream
-from backend.models.local_llm import generate_streaming_answer
-from backend.api.server import app
-
-
-import time
+# Initialize Azure OpenAI
+client = OpenAIClient(
+    endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+    credential=AzureKeyCredential(os.environ["AZURE_OPENAI_KEY"])
+)
 
 app = FastAPI(title="HOME AI Assistant API")
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,93 +28,39 @@ class Query(BaseModel):
     user_id: str = None
     stream: bool = False
 
+# ------------------------------
+# Helper: Stream Azure AI response
+# ------------------------------
+async def generate_streaming_answer(prompt: str):
+    # Use async generator for streaming
+    chat = client.chat_completions.begin_create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}],
+        streaming=True
+    )
+    async for chunk in chat:
+        # chunk is partial content
+        if chunk.delta and "content" in chunk.delta:
+            yield chunk.delta["content"]
+            await asyncio.sleep(0.01)  # smooth streaming
 
 # ------------------------------
-# ONBOARDING ROUTER
-# ------------------------------
-def onboarding_router(user_id, question, profile):
-
-    # Step 1: identify use-case
-    if profile.get("use_case") is None:
-        if "personal" in question.lower():
-            profile["use_case"] = "personal"
-            save_profile(user_id, profile)
-            return "Great. What do you want me to help you with personally? (health, productivity, study, notes, etc.)"
-
-        elif "enterprise" in question.lower():
-            profile["use_case"] = "enterprise"
-            save_profile(user_id, profile)
-            return "Understood. Please provide API key or integration file of your organization."
-
-        else:
-            return "Are you using this assistant for personal use or enterprise use?"
-
-    # Step 2: personal onboarding
-    if profile["use_case"] == "personal" and not profile.get("onboarding_complete"):
-        profile["preferences"] = question
-        profile["onboarding_complete"] = True
-        save_profile(user_id, profile)
-        return "Perfect, your preferences are saved. How can I assist you today?"
-
-    # Step 3: enterprise onboarding
-    if profile["use_case"] == "enterprise" and not profile.get("onboarding_complete"):
-        profile["org_details"] = {"integration_info": question}
-        profile["onboarding_complete"] = True
-        save_profile(user_id, profile)
-        return "Your organization is integrated successfully. How can I assist you?"
-
-    return None
-
-
-
-# ------------------------------
-# MAIN ROUTER
-# ------------------------------
-def main_router(user_id, question, profile):
-
-    # If enterprise, we route to org API (stub for now)
-    if profile.get("use_case") == "enterprise":
-        if "slack" in question.lower():
-            return "Slack API integration placeholder."
-        if "file" in question.lower():
-            return "Enterprise File Manager placeholder."
-        # fallback
-        return get_rag_answer(question)
-
-    # If personal, use RAG + LLM
-    rag_result = get_rag_answer(question)
-    return rag_result
-
-
-
-# ------------------------------
-# STREAMING ENDPOINT
+# AI endpoint: Streaming
 # ------------------------------
 @app.post("/ask_stream")
-def ask_stream(payload: Query):
-    user_id = payload.user_id or "default_user"
-    profile = load_profile(user_id)
-
-    onboard_reply = onboarding_router(user_id, payload.question, profile)
-    if onboard_reply:
-        return StreamingResponse(generate_streaming_answer(onboard_reply), media_type="text/plain")
-
-    answer = main_router(user_id, payload.question, profile)
-    return StreamingResponse(generate_streaming_answer(answer), media_type="text/plain")
-
-
+async def ask_stream(payload: Query):
+    prompt = payload.question
+    return StreamingResponse(generate_streaming_answer(prompt), media_type="text/plain")
 
 # ------------------------------
-# SYNC ENDPOINT
+# AI endpoint: Synchronous
 # ------------------------------
 @app.post("/ask")
-def ask(payload: Query):
-    user_id = payload.user_id or "default_user"
-    profile = load_profile(user_id)
-
-    onboard_reply = onboarding_router(user_id, payload.question, profile)
-    if onboard_reply:
-        return {"answer": onboard_reply}
-
-    answer = main_router(user_id, payload.question, profile)
+async def ask(payload: Query):
+    prompt = payload.question
+    response = client.chat_completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    answer = response.choices[0].message.content
     return {"answer": answer}
