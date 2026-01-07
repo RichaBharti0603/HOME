@@ -28,9 +28,9 @@ const Navbar = () => {
 
           <div className={`nav-links ${isMobileMenuOpen ? 'open' : ''}`}>
             {navItems.map((item) => (
-              <Link 
-                key={item.name} 
-                to={item.path} 
+              <Link
+                key={item.name}
+                to={item.path}
                 className="nav-link"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
@@ -43,13 +43,15 @@ const Navbar = () => {
             <Link to="/contact" className="btn btn-secondary">
               Contact Sales
             </Link>
-            <Link to="/dashboard" className="btn btn-primary">
-              Get Started
-            </Link>
-            
-            <button 
+            <Link to="/onboarding" className="btn btn-primary">
+  Get Started
+</Link>
+
+
+            <button
               className="mobile-menu-btn"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle menu"
             >
               <span className="menu-icon"></span>
               <span className="menu-icon"></span>

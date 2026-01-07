@@ -64,9 +64,10 @@ const Home = () => {
                 data leaks, or compliance risks.
               </p>
               <div className="hero-actions">
-                <Link to="/dashboard" className="btn btn-primary btn-lg">
-                  Start Free Trial
-                </Link>
+                <Link to="/onboarding" className="btn btn-primary">
+  Start Free Trial
+</Link>
+
                 <Link to="/contact" className="btn btn-secondary btn-lg">
                   Book Demo
                 </Link>
