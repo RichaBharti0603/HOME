@@ -1,7 +1,8 @@
-from backend.microsoft.azure_openai_mock import generate_response as azure_ai
-from backend.ai.ollama_client import generate_response as local_ai
+from backend.services.ollama_service import generate_response
 
-def route_prompt(prompt: str, mode: str = "local"):
-    if mode == "azure":
-        return azure_ai(prompt)
-    return local_ai(prompt)
+
+def route_prompt(message: str, provider: str = "local"):
+    if provider == "local":
+        return generate_response(message)
+    else:
+        return "Provider not supported yet"

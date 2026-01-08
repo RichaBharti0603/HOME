@@ -1,16 +1,15 @@
 import requests
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL = "phi"
 
-def generate_response(prompt: str) -> str:
+def generate_local(prompt: str):
     payload = {
-        "model": MODEL,
+        "model": "phi",
         "prompt": prompt,
         "stream": False
     }
 
-    response = requests.post(OLLAMA_URL, json=payload, timeout=60)
+    response = requests.post(OLLAMA_URL, json=payload, timeout=120)
     response.raise_for_status()
 
     return response.json()["response"]
