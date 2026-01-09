@@ -1,6 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import asyncio
+from backend.core.monitoring_worker import monitoring_loop
+from backend.core.database import Base, engine
+from backend.models.website import Website
+from backend.core.scheduler import start_monitoring
+from backend.routes.status_routes import router as status_router
+import threading
+import time
+from backend.services.monitor import check_websites
+
+
 
 # AI
 from backend.ai.prompt_router import route_prompt
@@ -31,3 +42,29 @@ def chat(req: ChatRequest):
     response = route_prompt(req.message, req.provider)
     return {"response": response}
 app.include_router(website_router)
+
+
+@app.on_event("startup")
+async def start_background_tasks():
+    asyncio.create_task(monitoring_loop())
+
+Base.metadata.create_all(bind=engine)
+start_monitoring()
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+app.include_router(status_router)
+
+def monitor_loop():
+    while True:
+        check_websites()
+        time.sleep(60)
+
+@app.on_event("startup")
+def start_monitor():
+    threading.Thread(target=monitor_loop, daemon=True).start()
+
+
+
