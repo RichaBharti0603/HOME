@@ -1,26 +1,13 @@
-from sqlalchemy import Column, Integer, String, DateTime
-from backend.core.database import Base
-import uuid
-from sqlalchemy.orm import relationship
-from backend.models.website_check import WebsiteCheck
-
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from datetime import datetime
+from core.database import Base
 
 class Website(Base):
     __tablename__ = "websites"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
     url = Column(String, nullable=False)
-
-    status = Column(String, default="unknown")      # up / down
-    last_status = Column(String, default="unknown") # for comparison
-    last_checked = Column(DateTime)
-
-    owner_id = Column(Integer)
-
-    public_token = Column(
-        String,
-        unique=True,
-        default=lambda: uuid.uuid4().hex
-    )
-    checks = relationship("WebsiteCheck", back_populates="website", cascade="all, delete-orphan")
-
+    interval = Column(Integer, default=60)
+    last_status = Column(String, default="UNKNOWN")
+    last_checked = Column(DateTime, nullable=True)
+    is_active = Column(Boolean, default=True)

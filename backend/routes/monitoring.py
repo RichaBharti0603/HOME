@@ -1,9 +1,14 @@
 from fastapi import APIRouter
-from services.anomaly_ai import detect_anomaly
+from core.database import SessionLocal
+from models.website import Website
 
-router = APIRouter(prefix="/monitoring", tags=["Monitoring AI"])
+router = APIRouter(prefix="/monitoring", tags=["Monitoring"])
 
-@router.post("/anomaly")
-def check_anomaly(metrics: list):
-    is_anomaly = detect_anomaly(metrics)
-    return {"anomaly_detected": is_anomaly}
+@router.post("/add")
+def add_website(url: str, interval: int = 60):
+    db = SessionLocal()
+    site = Website(url=url, interval=interval)
+    db.add(site)
+    db.commit()
+    db.close()
+    return {"message": "Website added for monitoring"}
