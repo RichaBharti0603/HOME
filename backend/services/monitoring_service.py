@@ -4,7 +4,7 @@ from datetime import datetime
 from core.database import SessionLocal
 from models.website import Website
 
-def monitor_websites():
+def run_monitoring_cycle():
     while True:
         db = SessionLocal()
         websites = db.query(Website).filter(Website.is_active == True).all()

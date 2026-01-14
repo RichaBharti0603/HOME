@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
-from backend.core.database import SessionLocal
-from backend.models.alert import Alert
-from backend.core.auth import get_current_user
+from core.database import SessionLocal
+from models.alert import Alert
+from core.auth import get_current_user
 
 router = APIRouter(prefix="/api/alerts", tags=["Alerts"])
 

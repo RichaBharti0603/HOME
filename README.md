@@ -76,6 +76,138 @@
 
   <hr/>
 
+   <h2>  ✅ FINAL HOME ARCHITECTURE (AUTHORITATIVE)
+
+HOME is a dual-plane system:
+
+Local Private AI Plane (User-Owned)
+
+Cloud Monitoring Plane (HOME-Owned)
+
+These two planes cooperate but never leak sensitive data.
+
+1️⃣ What exactly happens when a user uses HOME
+User chooses features:
+
+✅ Website Monitoring (Cloud)
+
+✅ Private AI Assistant (Local)
+
+✅ Both (Most users)
+
+2️⃣ Website Monitoring — HOW IT WORKS (Cloud)
+Purpose
+
+Monitor uptime, latency, status, SLA — centrally.
+
+Where it runs
+
+✅ HOME Cloud Backend (Railway)
+
+Flow
+User → HOME Frontend → HOME Cloud API → Monitoring Workers → Database
+
+Data collected
+
+Website URL
+
+Status (UP/DOWN)
+
+Response time
+
+Timestamp
+
+Data NOT collected
+
+❌ Website content
+❌ User documents
+❌ AI prompts
+
+✔ This is safe and scalable
+
+3️⃣ Private AI Assistant — HOW IT WORKS (Local)
+Purpose
+
+Let users query:
+
+Their website knowledge
+
+Uploaded documents
+
+Monitoring data (read-only summary)
+
+Where it runs
+
+✅ User’s machine
+
+Flow
+User → HOME Frontend → Local HOME Agent → Ollama → Local Vector DB
+
+Guarantees
+
+No data leaves machine
+
+No API calls to HOME servers
+
+No OpenAI / cloud inference
+
+✔ True privacy
+
+4️⃣ CRITICAL LINK: How AI can “know” monitoring data
+
+This is important.
+
+Monitoring data lives in cloud.
+AI runs locally.
+
+So we do this:
+
+🔁 SAFE SYNC MODEL
+
+Only aggregated monitoring data is pulled
+
+No prompts pushed out
+
+
+5️⃣ Final system diagram (simplified)
+┌─────────────────────────────┐
+│         User Device         │
+│                             │
+│  HOME Local Agent           │
+│  ├── Ollama                 │
+│  ├── Vector DB              │
+│  ├── Documents              │
+│  ├── Monitoring Snapshot ◄──┼──── HOME Cloud
+│  └── Local FastAPI          │
+│                             │
+└─────────────▲───────────────┘
+              │
+         Browser UI
+
+
+
+
+9️⃣ How frontend decides where to send AI requests
+On load:
+try {
+  fetch("http://localhost:8001/health")
+  → Private Mode
+} catch {
+  → Cloud Mode (AI disabled or limited)
+}
+
+UX:
+
+🔒 Private Mode (Local)
+
+☁️ Cloud Mode (Monitoring only)
+
+ THIS is our product promise 
+<b>
+“HOME monitors your website in the cloud,
+but your AI assistant runs on your machine,
+using your data, with zero external exposure.”
+</b>
 
 
 
@@ -186,26 +318,7 @@ npm run dev
 
   <hr/>
 
-  <h2>👥 Team</h2>
-
-  <table border="1" cellpadding="10" cellspacing="0" width="100%">
-    <tr>
-      <th>Name</th>
-      <th>Role</th>
-    </tr>
-    <tr>
-      <td><b>Richa Bharti</b></td>
-      <td>Development & AI Architecture</td>
-    </tr>
-    <tr>
-      <td><b>Kunal Rohilla</b></td>
-      <td>Cloud & Infrastructure</td>
-    </tr>
-    <tr>
-      <td><b>Risha Batra</b></td>
-      <td>Security & Compliance</td>
-    </tr>
-  </table>
+  
 
   <hr/>
 

@@ -1,6 +1,6 @@
 import asyncio
-from backend.services.monitoring_service import check_website_status
-from backend.services.monitor_store import monitored_websites
+from services.monitoring_service import check_website_status
+from services.monitor_store import monitored_websites
 
 async def monitor_loop():
     while True:

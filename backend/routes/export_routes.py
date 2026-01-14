@@ -1,9 +1,9 @@
 import csv
 from fastapi import APIRouter, Depends, Response
-from backend.core.auth import get_current_user
-from backend.core.database import SessionLocal
-from backend.models.incident import Incident
-from backend.models.website import Website
+from core.auth import get_current_user
+from core.database import SessionLocal
+from models.incident import Incident
+from models.website import Website
 
 router = APIRouter(prefix="/api/export", tags=["Export"])
 

@@ -1,8 +1,12 @@
-# create_db.py
 from core.database import Base, engine
-from backend.models import *  # make sure all your models are imported
 
-# Create all tables in the database
-Base.metadata.create_all(bind=engine)
+# Import all models so SQLAlchemy registers them
+from models.website import Website
+# (later you can add more models here)
 
-print("Database and tables created successfully.")
+def create_tables():
+    Base.metadata.create_all(bind=engine)
+    print("✅ Database tables created successfully")
+
+if __name__ == "__main__":
+    create_tables()

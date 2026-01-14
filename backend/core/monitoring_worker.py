@@ -1,5 +1,6 @@
 import asyncio
-from backend.services.monitoring_service import run_monitoring_cycle
+from services.monitoring_service import run_monitoring_cycle
+
 
 async def monitoring_loop():
     while True:

@@ -1,4 +1,4 @@
-from backend.services.ollama_service import generate_response
+from services.ollama_service import generate_response
 
 
 def route_prompt(message: str, provider: str = "local"):

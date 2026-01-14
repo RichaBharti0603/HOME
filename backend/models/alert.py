@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
-from backend.core.database import Base
+from core.database import Base
 
 class Alert(Base):
     __tablename__ = "alerts"

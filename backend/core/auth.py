@@ -1,6 +1,6 @@
 from fastapi import Header, HTTPException
-from backend.core.database import SessionLocal
-from backend.models.user import User
+from core.database import SessionLocal
+from models.user import User
 
 def get_current_user(x_user_email: str = Header(...)):
     db = SessionLocal()

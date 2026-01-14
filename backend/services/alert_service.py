@@ -1,5 +1,5 @@
-from backend.models.alert import Alert
-from backend.services.email_service import send_email
+from models.alert import Alert
+from services.email_service import send_email
 
 def dispatch_alerts(db, website, message):
     alerts = (

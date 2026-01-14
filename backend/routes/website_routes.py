@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
-from backend.core.database import get_db
-from backend.models.website import Website
+from core.database import get_db
+from models.website import Website
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/websites", tags=["Websites"])

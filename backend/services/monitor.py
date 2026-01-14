@@ -1,9 +1,9 @@
 import requests
 from datetime import datetime
-from backend.core.database import SessionLocal
-from backend.models.website import Website
-from backend.utils.alerts import send_email
-from backend.models.website_check import WebsiteCheck
+from core.database import SessionLocal
+from models.website import Website
+from utils.alerts import send_email
+from models.website_check import WebsiteCheck
 
 
 def check_websites():
