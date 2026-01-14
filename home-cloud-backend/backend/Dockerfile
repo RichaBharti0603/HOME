@@ -1,10 +1,18 @@
+# backend/Dockerfile
 FROM python:3.11-slim
 
+# Set working directory
 WORKDIR /app
-COPY . .
 
-RUN pip install fastapi uvicorn
+# Copy backend files
+COPY . /app
 
-EXPOSE 8000
+# Install dependencies
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Expose port (Render uses $PORT)
+ENV PORT 10000
+
+# Start server
+CMD uvicorn app:app --host 0.0.0.0 --port $PORT
