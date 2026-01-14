@@ -1,5 +1,4 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
-from sqlalchemy.orm import relationship
 from datetime import datetime
 from core.database import Base
 
@@ -12,6 +11,3 @@ class Website(Base):
     last_status = Column(String, default="UNKNOWN")
     last_checked = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True)
-
-    # Add this line:
-    checks = relationship("WebsiteCheck", back_populates="website", cascade="all, delete-orphan")
