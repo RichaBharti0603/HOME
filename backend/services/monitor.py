@@ -43,44 +43,21 @@ def check_websites():
     db.commit()
     db.close()
 
-
 def check_websites():
     db = SessionLocal()
     websites = db.query(Website).all()
 
     if not websites:
-        db.close()
         return
 
-    for site in websites:
+    for website in websites:
         try:
-            start = time.time()
-            response = requests.get(site.url, timeout=5)
-            response_time_ms = int((time.time() - start) * 1000)
-            new_status = "up" if response.status_code < 400 else "down"
+            response = requests.get(website.url, timeout=5)
+            website.status = "up" if response.status_code == 200 else "down"
         except Exception:
-            new_status = "down"
-            response_time_ms = None
+            website.status = "down"
 
-        # Store history
-        check_entry = WebsiteCheck(
-            website_id=site.id,
-            status=new_status,
-            response_time_ms=response_time_ms
-        )
-        db.add(check_entry)
+        db.commit()
 
-        # State change alerts (existing logic)
-        if site.status != new_status:
-            if new_status == "down":
-                send_email(...)
-            else:
-                send_email(...)
-
-        site.last_status = site.status
-        site.status = new_status
-        site.last_checked = datetime.utcnow()
-
-    db.commit()
-    db.close()
-
+        # ✅ THIS IS THE CORRECT PLACE
+        print(f"Checked {website.url} → {website.status}")

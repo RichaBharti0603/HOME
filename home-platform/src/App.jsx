@@ -15,6 +15,7 @@ import AIAssistant from "./pages/AIAssistant";
 import Compliance from "./pages/Compliance";
 import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
+import BookDemo from "./pages/BookDemo";
 
 import "./styles/globals.css";
 
@@ -30,6 +31,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/book-demo" element={<BookDemo />} />
 
             {/* Product */}
             <Route path="/dashboard" element={<Dashboard />} />

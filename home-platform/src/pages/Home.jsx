@@ -68,9 +68,10 @@ const Home = () => {
   Start Free Trial
 </Link>
 
-                <Link to="/contact" className="btn btn-secondary btn-lg">
-                  Book Demo
-                </Link>
+          <Link to="/book-demo" className="btn btn-secondary btn-lg">
+  Book Demo
+</Link>
+
               </div>
               <div className="hero-metrics">
                 {metrics.map((metric, index) => (
