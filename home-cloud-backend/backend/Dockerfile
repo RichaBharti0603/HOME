@@ -1,18 +1,12 @@
-# backend/Dockerfile
 FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
-# Copy backend files
-COPY . /app
+COPY backend /app
+COPY requirements.txt /app/requirements.txt
 
-# Install dependencies
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose port (Render uses $PORT)
-ENV PORT 10000
+EXPOSE 8000
 
-# Start server
-CMD uvicorn app:app --host 0.0.0.0 --port $PORT
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]

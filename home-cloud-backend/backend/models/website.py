@@ -9,5 +9,5 @@ class Website(Base):
     url = Column(String, nullable=False)
     interval = Column(Integer, default=60)
     last_status = Column(String, default="UNKNOWN")
-    last_checked = Column(DateTime, nullable=True)
+    last_checked = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
