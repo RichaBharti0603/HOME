@@ -1,37 +1,22 @@
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from core.database import get_db
+from core.database import SessionLocal
+from core.auth import get_current_user
 from models.website import Website
-from pydantic import BaseModel
+from models.user import User
 
-router = APIRouter(prefix="/api/websites", tags=["Websites"])
-
-class WebsiteCreate(BaseModel):
-    name: str
-    url: str
-
-
-@router.get("/")
-def list_websites(db: Session = Depends(get_db)):
-    return db.query(Website).all()
-
+router = APIRouter()
 
 @router.post("/")
-def register_website(
-    website: WebsiteCreate,
-    db: Session = Depends(get_db),
-    x_user_email: str | None = Header(default=None)
-):
-    new_website = Website(
-        name=website.name,
-        url=website.url
+def add_website(url: str, user: User = Depends(get_current_user)):
+    db: Session = SessionLocal()
+
+    website = Website(
+        url=url,
+        user_id=user.id
     )
 
-    db.add(new_website)
+    db.add(website)
     db.commit()
-    db.refresh(new_website)
 
-    return {
-        "message": "Website registered successfully",
-        "website": new_website
-    }
+    return {"message": "Website added"}

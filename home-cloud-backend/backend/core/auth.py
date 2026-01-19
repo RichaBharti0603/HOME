@@ -1,17 +1,13 @@
 from fastapi import Header, HTTPException
+from sqlalchemy.orm import Session
 from core.database import SessionLocal
 from models.user import User
 
-def get_current_user(x_user_email: str = Header(...)):
-    db = SessionLocal()
+def get_current_user(x_api_key: str = Header(...)):
+    db: Session = SessionLocal()
 
-    user = db.query(User).filter(User.email == x_user_email).first()
-
+    user = db.query(User).filter(User.api_token == x_api_key).first()
     if not user:
-        user = User(email=x_user_email)
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+        raise HTTPException(status_code=401, detail="Invalid API key")
 
-    db.close()
     return user

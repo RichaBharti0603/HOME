@@ -7,6 +7,8 @@ from core.database import Base, engine
 from services.monitor import check_websites
 from routes.website_routes import router as website_router
 from routes.status_routes import router as status_router
+from routes.auth_routes import router as auth_router
+
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -36,4 +38,6 @@ def monitor_loop():
 @app.on_event("startup")
 def start_monitor():
     threading.Thread(target=monitor_loop, daemon=True).start()
+
+app.include_router(auth_router)
 
