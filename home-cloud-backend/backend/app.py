@@ -10,6 +10,9 @@ from routes.status_routes import router as status_router
 from routes.auth_routes import router as auth_router
 from models.user import User
 from models.website import Website
+from models.tenant import Tenant
+from models.monitoring_result import MonitoringResult
+
 
 
 
