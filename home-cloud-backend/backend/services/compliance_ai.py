@@ -1,6 +1,6 @@
 from azure.ai.textanalytics import TextAnalyticsClient
 from azure.core.credentials import AzureKeyCredential
-from core.config import settings
+from backend.core.config import settings
 
 client = TextAnalyticsClient(
     endpoint=settings.AZURE_LANGUAGE_ENDPOINT,

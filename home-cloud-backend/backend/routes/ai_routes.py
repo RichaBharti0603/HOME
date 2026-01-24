@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from services.ollama_service import generate_response
+from backend.services.ollama_service import generate_response
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 

@@ -1,18 +1,20 @@
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from datetime import datetime
-import uuid
-
-from core.database import Base
-
+from backend.core.database import Base
 
 class Website(Base):
     __tablename__ = "websites"
 
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    tenant_id = Column(String, ForeignKey("tenants.id"), nullable=False)
-
+    id = Column(Integer, primary_key=True, index=True)
     url = Column(String, nullable=False)
-    interval_seconds = Column(Integer, default=60)
+    interval = Column(Integer, default=60)
 
-    status = Column(String, default="PENDING")  # PENDING, ACTIVE, PAUSED
-    created_at = Column(DateTime, default=datetime.utcnow)
+    last_status = Column(String, default="UNKNOWN")
+    last_checked = Column(DateTime, nullable=True)
+
+    is_active = Column(Boolean, default=True)
+
+    # 🔔 ALERT STATE (IMPORTANT)
+    alert_sent = Column(Boolean, default=False)
+    response_time_ms = Column(Integer, nullable=True)
+    failure_type = Column(String, nullable=True)    

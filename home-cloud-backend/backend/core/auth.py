@@ -1,7 +1,7 @@
 from fastapi import Header, HTTPException
 from sqlalchemy.orm import Session
-from core.database import SessionLocal
-from models.user import User
+from backend.core.database import SessionLocal
+from backend.models.user import User
 
 def get_current_user(x_api_key: str = Header(...)):
     db: Session = SessionLocal()

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from core.database import SessionLocal
-from models.website import Website
+from backend.core.database import SessionLocal
+from backend.models.website import Website
 
 router = APIRouter(prefix="/status", tags=["Public Status"])
 

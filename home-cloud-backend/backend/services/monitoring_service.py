@@ -1,8 +1,8 @@
 import time
 import requests
 from datetime import datetime
-from core.database import SessionLocal
-from models.website import Website
+from backend.core.database import SessionLocal
+from backend.models.website import Website
 
 def run_monitoring_cycle():
     while True:

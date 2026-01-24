@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
-from core.auth import get_current_user
-from core.database import SessionLocal
-from models.incident import Incident
-from models.website import Website
+from backend.core.auth import get_current_user
+from backend.core.database import SessionLocal
+from backend.models.incident import Incident
+from backend.models.website import Website
 
 router = APIRouter(prefix="/api/incidents", tags=["Incidents"])
 

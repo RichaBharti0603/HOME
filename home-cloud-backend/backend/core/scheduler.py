@@ -1,6 +1,6 @@
 import threading
 import time
-from services.monitoring_service import run_monitoring_cycle
+from backend.services.monitoring_service import run_monitoring_cycle
 
 def start_monitoring():
     def loop():

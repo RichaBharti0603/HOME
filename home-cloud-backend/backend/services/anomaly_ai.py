@@ -1,6 +1,6 @@
 from azure.ai.anomalydetector import AnomalyDetectorClient
 from azure.core.credentials import AzureKeyCredential
-from core.config import settings
+from backend.core.config import settings
 from datetime import datetime
 
 client = AnomalyDetectorClient(

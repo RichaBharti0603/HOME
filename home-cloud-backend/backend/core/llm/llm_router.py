@@ -1,5 +1,5 @@
-from core.llm.ollama_client import generate_response
-from core.microsoft.azure_mock import analyze_sentiment, detect_risk
+from backend.core.llm.ollama_client import generate_response
+from backend.core.microsoft.azure_mock import analyze_sentiment, detect_risk
 
 def process_prompt(prompt: str) -> dict:
     ai_response = generate_response(prompt)

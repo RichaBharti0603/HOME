@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from services.azure_openai import ask_private_ai
-from models.schemas import PromptRequest
+from backend.models.schemas import PromptRequest
 
 router = APIRouter(prefix="/ai", tags=["AI Assistant"])
 

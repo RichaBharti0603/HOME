@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 from datetime import datetime
-from core.auth import get_current_user
-from core.database import SessionLocal
-from services.sla_service import calculate_uptime
-from models.website import Website
+from backend.core.auth import get_current_user
+from backend.core.database import SessionLocal
+from backend.services.sla_service import calculate_uptime
+from backend.models.website import Website
 
 router = APIRouter(prefix="/api/sla", tags=["SLA"])
 

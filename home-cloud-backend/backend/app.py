@@ -2,17 +2,17 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import threading
 import time
-
-from core.database import Base, engine
-from services.monitor import check_websites
-from routes.website_routes import router as website_router
-from routes.status_routes import router as status_router
-from routes.auth_routes import router as auth_router
-from models.user import User
-from models.website import Website
-from models.tenant import Tenant
-from models.monitoring_result import MonitoringResult
-
+from backend.core.database import Base, engine
+from backend.services.monitor import check_websites
+from backend.routes.website_routes import router as website_router
+from backend.routes.status_routes import router as status_router
+from backend.routes.auth_routes import router as auth_router
+from backend.models.user import User
+from backend.models.website import Website
+from backend.models.tenant import Tenant
+from backend.models.monitoring_result import MonitoringResult
+from backend.services.scheduler import scheduler_loop
+from backend.services.worker_loop import worker_loop
 
 
 
@@ -47,6 +47,10 @@ def start_monitor():
     threading.Thread(target=monitor_loop, daemon=True).start()
 
 app.include_router(auth_router)
+@app.on_event("startup")
+def start_background_services():
+    threading.Thread(target=scheduler_loop, daemon=True).start()
+    threading.Thread(target=worker_loop, daemon=True).start()
 
 
 

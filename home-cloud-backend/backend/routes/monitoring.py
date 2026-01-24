@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from core.database import SessionLocal
-from models.website import Website
+from backend.core.database import SessionLocal
+from backend.models.website import Website
 
 router = APIRouter(prefix="/monitoring", tags=["Monitoring"])
 

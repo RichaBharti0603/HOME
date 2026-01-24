@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from services.compliance_ai import scan_compliance
-from models.schemas import PromptRequest
+from backend.services.compliance_ai import scan_compliance
+from backend.models.schemas import PromptRequest
 
 router = APIRouter(prefix="/compliance", tags=["Compliance AI"])
 

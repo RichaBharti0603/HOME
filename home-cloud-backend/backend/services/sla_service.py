@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy.orm import Session
-from models.incident import Incident
+from backend.models.incident import Incident
 
 def calculate_uptime(db: Session, website_id: int, start: datetime, end: datetime):
     total_seconds = (end - start).total_seconds()
