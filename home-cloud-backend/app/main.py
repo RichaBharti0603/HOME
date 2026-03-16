@@ -1,20 +1,19 @@
-import asyncio
 from fastapi import FastAPI
-from app.db.init_db import init_db
-from app.routers.websites import router as website_router
-from app.routers.monitoring import router as monitoring_router
-from app.services.scheduler import monitoring_loop
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.routes import auth, projects, monitors
 
 app = FastAPI()
 
-@app.on_event("startup")
-async def startup():
-    init_db()
-    asyncio.create_task(monitoring_loop())
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # allow all during development
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-app.include_router(website_router)
-app.include_router(monitoring_router)
-
-@app.get("/")
-def root():
-    return {"message": "Home AI Backend Running"}
+app.include_router(auth.router)
+app.include_router(projects.router)
+app.include_router(monitors.router)
