@@ -31,7 +31,7 @@ export default function Login() {
       localStorage.setItem("token", data.access_token);
 
       // ✅ redirect
-      navigate("/dashboard");
+        navigate("/setup");   // instead of dashboard
 
     } else {
       alert(data.detail || "Login failed ❌");

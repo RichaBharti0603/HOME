@@ -4,6 +4,8 @@ import Home from "./pages/Home";       // your existing homepage
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import Setup from "./pages/Setup";
+
 
 function App() {
   return (
@@ -15,6 +17,7 @@ function App() {
         {/* Auth */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/setup" element={<Setup />} />
 
         {/* Protected */}
         <Route path="/dashboard" element={<Dashboard />} />
