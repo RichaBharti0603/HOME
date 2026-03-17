@@ -118,3 +118,14 @@ color:#666;
 margin-bottom:20px;
 
 }
+.switch-text {
+  margin-top: 12px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.switch-text span {
+  color: red;
+  cursor: pointer;
+  font-weight: bold;
+}

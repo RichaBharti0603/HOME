@@ -2,8 +2,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes import auth, projects, monitors
+from app.database import engine
+from app.models import user  # important: ensures model is registered
+from app.models.user import Base  # or wherever Base is defined
+
 
 app = FastAPI()
+Base.metadata.create_all(bind=engine)
 
 # CORS configuration
 app.add_middleware(

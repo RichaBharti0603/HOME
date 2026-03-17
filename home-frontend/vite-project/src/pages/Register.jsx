@@ -1,83 +1,92 @@
-import { useState } from "react"
-import "./register.css"
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "./register.css";
 
-export default function Register(){
+export default function Register() {
 
-const [name,setName]=useState("")
-const [email,setEmail]=useState("")
-const [password,setPassword]=useState("")
+  const navigate = useNavigate();
 
-const registerUser = async () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-const response = await fetch("http://127.0.0.1:8000/auth/register",{
+  const registerUser = async () => {
 
-method:"POST",
+    const response = await fetch("http://127.0.0.1:8000/auth/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name,
+        email,
+        password
+      })
+    });
 
-headers:{
-"Content-Type":"application/json"
-},
+    const data = await response.json();
 
-body:JSON.stringify({
-name,
-email,
-password
-})
+    if (response.ok) {
+      alert("Registration successful ✅");
+      navigate("/login");   // ✅ redirect
+    } else {
+      alert(data.detail || "Registration failed ❌");
+    }
+  };
 
-})
+  return (
+    <div className="container">
 
-const data = await response.json()
+      {/* LEFT IMAGE GRID */}
+      <div className="image-grid">
+        <img src="/images/img1.jpg" className="grid-img" />
+        <img src="/images/img2.jpg" className="grid-img" />
+        <img src="/images/img3.jpg" className="grid-img" />
+        <img src="/images/img4.jpg" className="grid-img" />
+        <img src="/images/img5.jpg" className="grid-img" />
+        <img src="/images/img6.jpg" className="grid-img" />
+      </div>
 
-alert(JSON.stringify(data))
+      {/* RIGHT FORM */}
+      <div className="form-card">
 
-}
+        <h2 className="title">Join HOME</h2>
+        <p className="subtitle">
+          Start monitoring your websites, portfolios and businesses
+        </p>
 
-return(
+        <input
+          placeholder="Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
 
-<div className="container">
+        <input
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-<div className="image-grid">
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
-<img src="/images/img1.jpg" className="grid-img"/>
-<img src="/images/img2.jpg" className="grid-img"/>
-<img src="/images/img3.jpg" className="grid-img"/>
-<img src="/images/img4.jpg" className="grid-img"/>
-<img src="/images/img5.jpg" className="grid-img"/>
-<img src="/images/img6.jpg" className="grid-img"/>
+        <button onClick={registerUser}>
+          Register
+        </button>
 
-</div>
+        {/* LOGIN LINK */}
+        <p className="switch-text">
+          Already have an account?{" "}
+          <span onClick={() => navigate("/login")}>
+            Login
+          </span>
+        </p>
 
-<div className="form-card">
-
-<h2 className="title">Join HOME</h2>
-<p className="subtitle">Start monitoring your websites, portfolios and businesses</p>
-
-<input
-placeholder="Name"
-value={name}
-onChange={(e)=>setName(e.target.value)}
-/>
-
-<input
-placeholder="Email"
-value={email}
-onChange={(e)=>setEmail(e.target.value)}
-/>
-
-<input
-type="password"
-placeholder="Password"
-value={password}
-onChange={(e)=>setPassword(e.target.value)}
-/>
-
-<button onClick={registerUser}>
-Register
-</button>
-
-</div>
-
-</div>
-
-)
-
+      </div>
+    </div>
+  );
 }
