@@ -1,5 +1,3 @@
-# app/main.py
-
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,17 +5,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 import logging
 
-# ✅ DB + Models
+# DB + Models
 from app.database import engine, Base
 import app.models.user
-import app.models.monitor   # IMPORTANT: ensures tables are created
+import app.models.monitor
 
-# ✅ Routers
+# Routers
 from app.routes import auth, monitor as monitor_route
 
 
 # ============================================
-# ✅ Logging Configuration
+# Logging
 # ============================================
 logging.basicConfig(
     level=logging.INFO,
@@ -30,32 +28,28 @@ settings = get_settings()
 
 
 # ============================================
-# ✅ Lifespan (Startup + Shutdown)
+# Lifespan
 # ============================================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
-    # --- STARTUP ---
     logger.info(f"🚀 Starting {settings.app_name}...")
     logger.info(f"   Environment: {settings.app_env}")
     logger.info(f"   Debug mode: {settings.debug}")
 
-    # ✅ Create DB Tables
     Base.metadata.create_all(bind=engine)
     logger.info("✅ Database tables ensured")
 
     yield
 
-    # --- SHUTDOWN ---
     logger.info(f"🛑 Shutting down {settings.app_name}...")
 
 
 # ============================================
-# ✅ FastAPI App
+# Create App FIRST
 # ============================================
 app = FastAPI(
     title=settings.app_name,
-    description="Hyper-Optimized Monitoring Engine — Website monitoring at scale",
+    description="Hyper-Optimized Monitoring Engine",
     version="0.1.0",
     lifespan=lifespan,
     docs_url="/docs" if settings.debug else None,
@@ -64,11 +58,11 @@ app = FastAPI(
 
 
 # ============================================
-# ✅ CORS (Frontend Connection)
+# CORS (AFTER app creation)
 # ============================================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # ⚠️ restrict in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -76,14 +70,14 @@ app.add_middleware(
 
 
 # ============================================
-# ✅ Routers
+# Routers
 # ============================================
 app.include_router(auth.router)
 app.include_router(monitor_route.router)
 
 
 # ============================================
-# ✅ Health Check
+# Endpoints
 # ============================================
 @app.get("/health", tags=["System"])
 async def health_check():
@@ -94,9 +88,6 @@ async def health_check():
     }
 
 
-# ============================================
-# ✅ Root Endpoint
-# ============================================
 @app.get("/", tags=["System"])
 async def root():
     return {

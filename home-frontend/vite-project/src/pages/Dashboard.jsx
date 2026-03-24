@@ -1,23 +1,18 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 export default function Dashboard() {
+  const location = useLocation();
+  const monitorId = location.state?.monitorId;
 
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    // 🔒 protect route
-    if (!token) {
-      navigate("/login");
-    }
-  }, []);
+  console.log("Received Monitor ID:", monitorId);
 
   return (
-    <div style={{ padding: "40px" }}>
-      <h1>Welcome to Dashboard 🎉</h1>
-      <p>You are logged in.</p>
+    <div>
+      <h2>Dashboard</h2>
+
+      {monitorId && (
+        <p>✅ New monitor created with ID: {monitorId}</p>
+      )}
     </div>
   );
 }

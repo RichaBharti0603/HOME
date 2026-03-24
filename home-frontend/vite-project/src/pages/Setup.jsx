@@ -11,24 +11,48 @@ export default function Setup() {
   const [frequency, setFrequency] = useState("5min");
   const [monitorType, setMonitorType] = useState("uptime");
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
 
-    if (!projectName || !url) {
-      alert("Please fill all required fields");
-      return;
-    }
+  if (!projectName || !url) {
+    alert("Please fill all required fields");
+    return;
+  }
 
-    // 👉 For now just log (backend next step)
-    console.log({
-      projectName,
-      url,
-      frequency,
-      monitorType
+  try {
+    const response = await fetch("http://127.0.0.1:8000/setup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        project_name: projectName,
+        url: url,
+        frequency: frequency,
+        monitor_type: monitorType
+      }),
     });
 
-    // ✅ move to dashboard
-    navigate("/dashboard");
-  };
+    const data = await response.json();
+    console.log("Backend response:", data);
+
+    if (response.ok) {
+  const monitorId = data.monitor_id;
+
+  console.log("Created Monitor ID:", monitorId);
+
+  // ✅ Pass monitorId to dashboard
+  navigate("/dashboard", {
+    state: { monitorId }
+  });
+} else {
+      alert("Error: " + data.detail);
+    }
+
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Backend not reachable");
+  }
+};
 
   return (
     <div className="container">
