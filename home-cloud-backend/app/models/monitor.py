@@ -1,18 +1,13 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import relationship
-
-from app.db.session import Base
-
+from app.database import Base
 
 class Monitor(Base):
     __tablename__ = "monitors"
 
-    id = Column(Integer, primary_key=True)
-
+    id = Column(Integer, primary_key=True, index=True)
+    project_name = Column(String)
     url = Column(String)
+    monitor_type = Column(String)
+    frequency = Column(String)
 
-    check_interval = Column(Integer)
-
-    project_id = Column(Integer, ForeignKey("projects.id"))
-
-    project = relationship("Project", back_populates="monitors")
+    user_id = Column(Integer, ForeignKey("users.id"))
