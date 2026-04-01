@@ -11,28 +11,32 @@ export default function Register() {
   const [password, setPassword] = useState("");
 
   const registerUser = async () => {
-
-    const response = await fetch("http://127.0.0.1:8000/auth/register", {
+  try {
+    const res = await fetch("http://127.0.0.1:8000/auth/register", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        name,
         email,
-        password
-      })
+        password,
+      }),
     });
 
-    const data = await response.json();
+    const data = await res.json();
 
-    if (response.ok) {
-      alert("Registration successful ✅");
-      navigate("/login");   // ✅ redirect
-    } else {
-      alert(data.detail || "Registration failed ❌");
+    if (!res.ok) {
+      alert(data.detail);
+      return;
     }
-  };
+
+    alert("Registered successfully!");
+    window.location.href = "/login";
+
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   return (
     <div className="container">

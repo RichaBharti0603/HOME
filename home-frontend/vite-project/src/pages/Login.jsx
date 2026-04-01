@@ -10,33 +10,35 @@ export default function Login() {
   const [password, setPassword] = useState("");
 
   const loginUser = async () => {
-
-    const response = await fetch("http://127.0.0.1:8000/auth/login", {
+  try {
+    const res = await fetch("http://127.0.0.1:8000/auth/login", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         email,
-        password
-      })
+        password,
+      }),
     });
 
-    const data = await response.json();
+    const data = await res.json();
 
-    if (response.ok) {
-      alert("Login successful ✅");
-
-      // ✅ store token
-      localStorage.setItem("token", data.access_token);
-
-      // ✅ redirect
-        navigate("/setup");   // instead of dashboard
-
-    } else {
-      alert(data.detail || "Login failed ❌");
+    if (!res.ok) {
+      alert(data.detail);
+      return;
     }
-  };
+
+    // ✅ Save token
+    localStorage.setItem("token", data.access_token);
+
+    // ✅ Redirect
+    window.location.href = "/dashboard";
+
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   return (
     <div className="container">
