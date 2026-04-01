@@ -12,3 +12,5 @@ class Monitor(Base):
     monitor_type = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    status = Column(String, default="UNKNOWN")
+

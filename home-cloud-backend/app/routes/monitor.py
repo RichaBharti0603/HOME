@@ -1,66 +1,72 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
-import httpx
+from typing import List
+
 from app.database import get_db
 from app.models.monitor import Monitor
+from app.schemas.monitor import MonitorCreate, MonitorResponse
 
-router = APIRouter()
-
-
-# Request Schema
-class SetupRequest(BaseModel):
-    project_name: str
-    url: str
-    frequency: str
-    monitor_type: str
+router = APIRouter(prefix="", tags=["Monitors"])
 
 
-# POST: Create Monitor
-@router.post("/setup")
-def create_monitor(data: SetupRequest, db: Session = Depends(get_db)):
-
-    new_monitor = Monitor(
-        project_name=data.project_name,
-        url=data.url,
-        frequency=data.frequency,
-        monitor_type=data.monitor_type
-    )
-
-    db.add(new_monitor)
-    db.commit()
-    db.refresh(new_monitor)
-
-    return {
-        "message": "Monitor created",
-        "monitor_id": new_monitor.id
-    }
-
-
-def check_website(url: str):
+# ============================================
+# CREATE MONITOR (SETUP)
+# ============================================
+@router.post("/setup", response_model=MonitorResponse)
+def create_monitor(data: MonitorCreate, db: Session = Depends(get_db)):
     try:
-        response = httpx.get(url, timeout=5)
-        if response.status_code < 400:
-            return "UP"
-        return "DOWN"
-    except Exception:
-        return "DOWN"
-    
-@router.get("/monitors")
+        monitor = Monitor(
+            project_name=data.project_name,
+            url=str(data.url),
+            frequency=data.frequency,
+            monitor_type=data.monitor_type,
+            status="UNKNOWN"
+        )
+
+        db.add(monitor)
+        db.commit()
+        db.refresh(monitor)
+
+        return monitor
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================
+# GET ALL MONITORS (DASHBOARD)
+# ============================================
+@router.get("/monitors", response_model=List[MonitorResponse])
 def get_monitors(db: Session = Depends(get_db)):
     monitors = db.query(Monitor).all()
+    return monitors
 
-    result = []
-    for m in monitors:
-        status = check_website(m.url)
 
-        result.append({
-            "id": m.id,
-            "project_name": m.project_name,
-            "url": m.url,
-            "frequency": m.frequency,
-            "monitor_type": m.monitor_type,
-            "status": status
-        })
+# ============================================
+# GET SINGLE MONITOR
+# ============================================
+@router.get("/monitors/{monitor_id}", response_model=MonitorResponse)
+def get_monitor(monitor_id: int, db: Session = Depends(get_db)):
+    monitor = db.query(Monitor).filter(Monitor.id == monitor_id).first()
 
-    return result
+    if not monitor:
+        raise HTTPException(status_code=404, detail="Monitor not found")
+
+    return monitor
+
+
+# ============================================
+# DELETE MONITOR
+# ============================================
+@router.delete("/monitors/{monitor_id}")
+def delete_monitor(monitor_id: int, db: Session = Depends(get_db)):
+    monitor = db.query(Monitor).filter(Monitor.id == monitor_id).first()
+
+    if not monitor:
+        raise HTTPException(status_code=404, detail="Monitor not found")
+
+    db.delete(monitor)
+    db.commit()
+
+    return {"message": "Monitor deleted successfully"}

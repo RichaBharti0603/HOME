@@ -1,18 +1,15 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from app.scheduler import start_scheduler
 from app.config import get_settings
 import logging
-
-# DB + Models
 from app.database import engine, Base
 import app.models.user
 import app.models.monitor
 
 # Routers
 from app.routes import auth, monitor as monitor_route
-
 
 # ============================================
 # Logging
@@ -39,10 +36,13 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     logger.info("✅ Database tables ensured")
 
+    # ✅ START SCHEDULER HERE
+    start_scheduler()
+    logger.info("✅ Scheduler started")
+
     yield
 
     logger.info(f"🛑 Shutting down {settings.app_name}...")
-
 
 # ============================================
 # Create App FIRST
