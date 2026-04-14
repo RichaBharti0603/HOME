@@ -45,13 +45,14 @@ services:
           property: connectionString
 
   # 3. Frontend (React/Vite)
+    # 3. Frontend (React/Vite)
   - type: web
     name: home-frontend
-    env: static
+    env: node
     plan: free
     rootDir: home-frontend/vite-project
-    buildCommand: npm install && npm run build
-    publishDir: ./dist
+    buildCommand: npm install && npm install -g serve && npm run build
+    startCommand: serve -s dist -l 3000
     envVars:
       - key: VITE_API_URL
         fromService:
