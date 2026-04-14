@@ -1,5 +1,5 @@
 services:
-  # 1. Backend API (FastAPI)
+  # 1. Backend API
   - type: web
     name: home-backend
     env: python
@@ -25,7 +25,7 @@ services:
       - key: AI_SERVICE_URL
         value: ""
 
-  # 2. Celery Worker
+  # 2. Worker
   - type: worker
     name: home-worker
     env: python
@@ -44,8 +44,7 @@ services:
           name: home-redis
           property: connectionString
 
-  # 3. Frontend (React/Vite)
-    # 3. Frontend (React/Vite)
+  # 3. Frontend
   - type: web
     name: home-frontend
     env: node
@@ -55,15 +54,13 @@ services:
     startCommand: serve -s dist -l 3000
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: home-backend
-          property: url
+        value: "https://home-backend.onrender.com"
 
   # 4. Redis
   - type: redis
     name: home-redis
     plan: free
+    ipAllowList: []
 
 databases:
   - name: home-db
