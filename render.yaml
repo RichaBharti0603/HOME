@@ -5,7 +5,9 @@ services:
     env: python
     rootDir: home-cloud-backend
     buildCommand: pip install -r requirements.txt
+    preDeployCommand: alembic upgrade head
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -23,8 +25,10 @@ services:
           property: url
       - key: APP_ENV
         value: production
+      - key: DEBUG
+        value: "false"
       - key: AI_SERVICE_URL
-        value: "" # To be updated manually by user after Ngrok setup
+        value: "" # Provided manually by user via Render Dashboard after Ngrok setup
 
   # 2. Celery Worker (Monitoring Engine)
   - type: worker
