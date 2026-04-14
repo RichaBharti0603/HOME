@@ -3,9 +3,9 @@ services:
   - type: web
     name: home-backend
     env: python
+    plan: free
     rootDir: home-cloud-backend
     buildCommand: pip install -r requirements.txt
-    preDeployCommand: alembic upgrade head
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port 8000
     healthCheckPath: /health
     envVars:
@@ -18,22 +18,18 @@ services:
           type: redis
           name: home-redis
           property: connectionString
-      - key: FRONTEND_URL
-        fromService:
-          type: web
-          name: home-frontend
-          property: url
       - key: APP_ENV
         value: production
       - key: DEBUG
         value: "false"
       - key: AI_SERVICE_URL
-        value: "" # Provided manually by user via Render Dashboard after Ngrok setup
+        value: ""
 
-  # 2. Celery Worker (Monitoring Engine)
+  # 2. Celery Worker
   - type: worker
     name: home-worker
     env: python
+    plan: free
     rootDir: home-cloud-backend
     buildCommand: pip install -r requirements.txt
     startCommand: celery -A app.worker worker --loglevel=info
@@ -48,10 +44,11 @@ services:
           name: home-redis
           property: connectionString
 
-  # 3. Static Frontend (React/Vite)
+  # 3. Frontend (React/Vite)
   - type: web
     name: home-frontend
     env: static
+    plan: free
     rootDir: home-frontend/vite-project
     buildCommand: npm install && npm run build
     publishDir: dist
@@ -62,13 +59,11 @@ services:
           name: home-backend
           property: url
 
-# 4. Managed PostgreSQL
 databases:
   - name: home-db
     plan: free
 
-# 5. Managed Redis
-redis:
-  - name: home-redis
+services:
+  - type: redis
+    name: home-redis
     plan: free
-    ipAllowList: [] # Only allow internal traffic
