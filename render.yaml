@@ -59,11 +59,11 @@ services:
           name: home-backend
           property: url
 
-databases:
-  - name: home-db
-    plan: free
-
-services:
+  # 4. Redis (FIXED — now inside services)
   - type: redis
     name: home-redis
+    plan: free
+
+databases:
+  - name: home-db
     plan: free
