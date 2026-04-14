@@ -51,7 +51,7 @@ services:
     plan: free
     rootDir: home-frontend/vite-project
     buildCommand: npm install && npm run build
-    publishDir: dist
+    publishDir: ./dist
     envVars:
       - key: VITE_API_URL
         fromService:
@@ -59,7 +59,7 @@ services:
           name: home-backend
           property: url
 
-  # 4. Redis (FIXED — now inside services)
+  # 4. Redis
   - type: redis
     name: home-redis
     plan: free
