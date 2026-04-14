@@ -33,9 +33,8 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.app_name}...")
     
-    # Create tables
-    Base.metadata.create_all(bind=engine)
-    logger.info("Database tables ensured")
+    # Database tables are now managed by Alembic
+    logger.info("Database migration check completed")
 
     # Start Scheduler
     start_scheduler()
@@ -63,7 +62,7 @@ app = FastAPI(
 # ============================================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[settings.frontend_url, "http://localhost:5173", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -8,8 +8,40 @@ from app.database import get_db
 from app.models.monitor import Monitor
 from app.models.log import MonitorLog
 from app.zkml.anomaly_detector import detector as zkml_detector
+from app.config import get_settings
+import httpx
+import logging
+
+logger = logging.getLogger(__name__)
+settings = get_settings()
 
 router = APIRouter(prefix="/ai", tags=["AI & ZKML"])
+
+def call_external_ai(prompt: str) -> dict:
+    """
+    Calls the external AI service with timeout and retry logic.
+    """
+    if not settings.ai_service_url:
+        return {"response": None, "fallback": True}
+
+    url = f"{settings.ai_service_url}/analyze"
+    
+    # 3s timeout as requested
+    timeout = httpx.Timeout(3.0, connect=3.0)
+    
+    # 1 retry as requested
+    for attempt in range(2):
+        try:
+            with httpx.Client(timeout=timeout) as client:
+                response = client.post(url, json={"prompt": prompt})
+                response.raise_for_status()
+                return response.json()
+        except Exception as e:
+            logger.warning(f"AI Service attempt {attempt + 1} failed: {e}")
+            if attempt == 1: # Last attempt
+                logger.error(f"AI Service unreachable at {url} after retries")
+    
+    return {"message": "AI service unavailable", "fallback": True}
 
 class AIQuery(BaseModel):
     query: str
@@ -90,9 +122,13 @@ def analyze_logs(logs: List[MonitorLog], monitor_name: str) -> str:
 
 @router.post("/query", response_model=AIResponse)
 def ai_query(data: AIQuery, db: Session = Depends(get_db)):
-    query = data.query.lower()
-    
-    # Simple semantic routing
+    # If external AI is configured, try it first
+    if settings.ai_service_url:
+        external_res = call_external_ai(data.query)
+        if not external_res.get("fallback"):
+            return {"response": external_res.get("response") or external_res.get("message")}
+
+    # Simple semantic routing (Local Fallback)
     if "why" in query and "down" in query:
         # Find all down monitors
         down_monitors = db.query(Monitor).filter(Monitor.status == "DOWN").all()
@@ -112,6 +148,10 @@ def ai_query(data: AIQuery, db: Session = Depends(get_db)):
         down = len([m for m in monitors if m.status == "DOWN"])
         return {"response": f"You currently have {len(monitors)} monitors configured. {up} are currently healthy (🟢 UP) and {down} are experiencing issues (🔴 DOWN)."}
 
+    # Final fallback message if AI service failed and no local match
+    if settings.ai_service_url:
+        return {"response": "The Intelligence Core is currently recalibrating (Service Unavailable). Using local analytical engines.", "fallback": True}
+
     return {"response": "I'm your H.O.M.E Assistant. I can help you understand monitoring failures, analyze latency trends, or explain why a site is down. Try asking: 'Why is my website down?'"}
 
 @router.get("/explain/{monitor_id}", response_model=AIResponse)
@@ -122,6 +162,13 @@ def ai_explain(monitor_id: int, db: Session = Depends(get_db)):
     
     logs = db.query(MonitorLog).filter(MonitorLog.monitor_id == monitor_id).order_by(MonitorLog.timestamp.desc()).limit(10).all()
     
+    # If external AI is configured, try it first
+    if settings.ai_service_url:
+        prompt = f"Explain why monitor {monitor.project_name} (URL: {monitor.url}) might be experiencing issues based on these recent logs: {logs}"
+        external_res = call_external_ai(prompt)
+        if not external_res.get("fallback"):
+            return {"response": external_res.get("response") or external_res.get("message")}
+
     explanation = analyze_logs(logs, monitor.project_name)
     
     # Add root cause suggestions

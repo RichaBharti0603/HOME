@@ -38,8 +38,39 @@ const MonitorDetail = () => {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 10000);
-    return () => clearInterval(interval);
+    
+    // WebSocket Setup
+    const apiBaseUrl = import.meta.env.VITE_API_URL || 'localhost:8000';
+    // Remove protocol for host string if present
+    const host = apiBaseUrl.replace(/^https?:\/\//, '');
+    const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const wsUrl = `${wsProtocol}://${host}/ws?monitor_id=${id}`;
+
+    let socket;
+    try {
+      socket = new WebSocket(wsUrl);
+      
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'status_update' && data.monitor_id == id) {
+          setMonitor(prev => ({ ...prev, status: data.status, last_response_time: data.last_response_time }));
+          // Refresh logs when we get an update
+          api.get(`/monitors/${id}/logs?limit=50`).then(res => setLogs(res.data));
+        }
+      };
+
+      socket.onerror = (err) => console.error('WebSocket Error:', err);
+    } catch (err) {
+      console.error('WebSocket connection failed', err);
+    }
+
+    // Polling as a fallback (less frequent)
+    const interval = setInterval(fetchData, 30000);
+    
+    return () => {
+      clearInterval(interval);
+      if (socket) socket.close();
+    };
   }, [id]);
 
   if (loading) return (

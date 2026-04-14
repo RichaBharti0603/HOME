@@ -19,6 +19,15 @@ class Settings(BaseSettings):
     # Redis — Celery uses this as its message broker
     redis_url: str = "redis://localhost:6379/0"
 
+    # AI Service URL (Local Ollama via Ngrok)
+    ai_service_url: str = ""
+
+    # Frontend URL (for CORS)
+    frontend_url: str = "http://localhost:5173"
+
+    # API Base URL (for internal references if needed)
+    api_base_url: str = "http://localhost:8000"
+
     # Email alert settings (used in Phase 6)
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
@@ -32,6 +41,8 @@ class Settings(BaseSettings):
         env_file_encoding = "utf-8"
         # Allow extra fields in .env without crashing
         extra = "ignore"
+        # Support case-insensitive env vars
+        case_sensitive = False
 
 
 # lru_cache ensures we only read the .env file ONCE.
