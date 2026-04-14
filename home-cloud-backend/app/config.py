@@ -13,13 +13,11 @@ class Settings(BaseSettings):
     app_env: str = "development"
     debug: bool = True
 
-    # Redis — Celery uses this as its message broker
-    # The broker is where Celery SENDS tasks to be queued
-    redis_url: str = "redis://localhost:6379/0"
+    # Database — PostgreSQL
+    database_url: str = "postgresql://user:password@localhost:5432/home"
 
-    # MongoDB — where monitoring results are stored
-    mongodb_url: str = "mongodb://homeuser:homepassword@localhost:27017/home_db?authSource=admin"
-    mongodb_db_name: str = "home_db"
+    # Redis — Celery uses this as its message broker
+    redis_url: str = "redis://localhost:6379/0"
 
     # Email alert settings (used in Phase 6)
     smtp_host: str = "smtp.gmail.com"

@@ -7,9 +7,11 @@ import logging
 from app.database import engine, Base
 import app.models.user
 import app.models.monitor
+import app.models.log
+import app.models.alert
 
 # Routers
-from app.routes import auth, monitor as monitor_route
+from app.routes import auth, monitor as monitor_route, alert, ai
 
 # ============================================
 # Logging
@@ -29,23 +31,22 @@ settings = get_settings()
 # ============================================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info(f"🚀 Starting {settings.app_name}...")
-    logger.info(f"   Environment: {settings.app_env}")
-    logger.info(f"   Debug mode: {settings.debug}")
-
+    logger.info(f"Starting {settings.app_name}...")
+    
+    # Create tables
     Base.metadata.create_all(bind=engine)
-    logger.info("✅ Database tables ensured")
+    logger.info("Database tables ensured")
 
-    # ✅ START SCHEDULER HERE
+    # Start Scheduler
     start_scheduler()
-    logger.info("✅ Scheduler started")
+    logger.info("Scheduler started")
 
     yield
 
-    logger.info(f"🛑 Shutting down {settings.app_name}...")
+    logger.info(f"Shutting down {settings.app_name}...")
 
 # ============================================
-# Create App FIRST
+# Create App
 # ============================================
 app = FastAPI(
     title=settings.app_name,
@@ -58,7 +59,7 @@ app = FastAPI(
 
 
 # ============================================
-# CORS (AFTER app creation)
+# CORS
 # ============================================
 app.add_middleware(
     CORSMiddleware,
@@ -74,6 +75,23 @@ app.add_middleware(
 # ============================================
 app.include_router(auth.router)
 app.include_router(monitor_route.router)
+app.include_router(alert.router)
+from fastapi import WebSocket, WebSocketDisconnect
+from app.utils.websocket_manager import manager
+
+# ... existing code ...
+
+app.include_router(ai.router)
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket, monitor_id: str = None):
+    await manager.connect(websocket, monitor_id)
+    try:
+        while True:
+            # Keep connection alive
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, monitor_id)
 
 
 # ============================================

@@ -4,7 +4,9 @@ from typing import List
 
 from app.database import get_db
 from app.models.monitor import Monitor
+from app.models.log import MonitorLog
 from app.schemas.monitor import MonitorCreate, MonitorResponse
+from app.schemas.log import MonitorLogResponse
 
 router = APIRouter(prefix="", tags=["Monitors"])
 
@@ -20,7 +22,8 @@ def create_monitor(data: MonitorCreate, db: Session = Depends(get_db)):
             url=str(data.url),
             frequency=data.frequency,
             monitor_type=data.monitor_type,
-            status="UNKNOWN"
+            status="UNKNOWN",
+            threshold_ms=data.threshold_ms
         )
 
         db.add(monitor)
@@ -70,3 +73,18 @@ def delete_monitor(monitor_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Monitor deleted successfully"}
+
+
+# ============================================
+# GET MONITOR LOGS/HISTORY
+# ============================================
+@router.get("/logs/{monitor_id}", response_model=List[MonitorLogResponse])
+def get_monitor_logs(monitor_id: int, limit: int = 50, db: Session = Depends(get_db)):
+    logs = db.query(MonitorLog).filter(MonitorLog.monitor_id == monitor_id).order_by(MonitorLog.timestamp.desc()).limit(limit).all()
+    return logs
+
+
+@router.get("/history/{monitor_id}", response_model=List[MonitorLogResponse])
+def get_monitor_history(monitor_id: int, db: Session = Depends(get_db)):
+    logs = db.query(MonitorLog).filter(MonitorLog.monitor_id == monitor_id).order_by(MonitorLog.timestamp.asc()).all()
+    return logs
