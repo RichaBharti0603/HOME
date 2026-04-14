@@ -79,8 +79,6 @@ app.include_router(alert.router)
 from fastapi import WebSocket, WebSocketDisconnect
 from app.utils.websocket_manager import manager
 
-# ... existing code ...
-
 app.include_router(ai.router)
 
 @app.websocket("/ws")

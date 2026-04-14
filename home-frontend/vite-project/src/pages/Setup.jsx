@@ -1,193 +1,188 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Shield, Globe, Clock, Server, 
-  ArrowLeft, Zap, CheckCircle2, 
-  ChevronRight, AlertCircle, Cpu
+  Zap, Globe, Clock, Shield, 
+  ArrowRight, Info, Plus, Server,
+  AlertCircle
 } from 'lucide-react';
 import api from '../utils/api';
+import { motion } from 'framer-motion';
 
 const Setup = () => {
   const [formData, setFormData] = useState({
     project_name: '',
     url: '',
-    frequency: '30s',
-    monitor_type: 'HTTP',
-    threshold_ms: 2000
+    frequency: '1m',
+    alert_email: ''
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
+    setError('');
     try {
-      await api.post('/setup', formData);
-      navigate('/dashboard');
+      await api.post('/monitors', formData);
+      setSuccess(true);
+      setTimeout(() => navigate('/dashboard'), 1500);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Handshake failed. Ensure the URL is reachable and the backend engine is active.');
+      setError('System rejection: Target URI or Name invalid.');
+    } finally {
       setLoading(false);
     }
   };
 
+  const frequencies = [
+    { value: '30s', label: 'Real-time (30s)', pulse: true },
+    { value: '1m', label: 'Active (1m)', pulse: false },
+    { value: '5m', label: 'Balanced (5m)', pulse: false },
+    { value: '15m', label: 'Economy (15m)', pulse: false },
+  ];
+
   return (
-    <div className="max-w-4xl mx-auto py-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex flex-col md:flex-row gap-8">
-        
-        {/* Left: Info & Context */}
-        <div className="md:w-1/3 space-y-6">
-          <button 
-            onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-border text-gray-400 hover:text-white transition-colors text-sm font-medium"
-          >
-            <ArrowLeft size={16} />
-            Dashboard
-          </button>
+    <div className="max-w-4xl mx-auto space-y-10">
+      <header>
+        <h1 className="text-3xl font-black text-white tracking-tight leading-none mb-2 underline decoration-accent-primary decoration-4 underline-offset-8">Deploy New Monitor</h1>
+        <p className="text-muted font-medium">Link a digital target to your private observation mesh.</p>
+      </header>
 
-          <div>
-            <h1 className="text-3xl font-black text-white tracking-tight mb-2">Deploy Monitor</h1>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              Connect your production assets to the H.O.M.E intelligence engine. We'll start monitoring latency and uptime immediately.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <div className="p-4 rounded-xl bg-accent-primary/5 border border-accent-primary/10">
-              <div className="flex items-center gap-2 mb-2">
-                <Cpu size={16} className="text-accent-primary" />
-                <h4 className="text-xs font-black uppercase text-accent-primary">Local Probes</h4>
-              </div>
-              <p className="text-xs text-gray-400">All checks originate from this machine. 100% data residency.</p>
-            </div>
-            
-            <div className="p-4 rounded-xl bg-white/5 border border-border">
-              <div className="flex items-center gap-2 mb-2 text-gray-300">
-                <CheckCircle2 size={16} />
-                <h4 className="text-xs font-black uppercase">Edge Ready</h4>
-              </div>
-              <p className="text-xs text-gray-500 font-mono">Status: WAITING_FOR_PAYLOAD</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: The Form */}
-        <div className="md:w-2/3">
-          <div className="premium-card p-8 border-accent-primary/5">
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase text-gray-500 tracking-widest ml-1">Target Description</label>
-                  <div className="relative group">
-                    <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-accent-primary transition-colors" size={20} />
-                    <input
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* FORM SECTION */}
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="lg:col-span-2 glass-card !p-8 shadow-2xl"
+        >
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="space-y-4">
+               <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white uppercase tracking-[0.2em] ml-1">Target Project Name</label>
+                  <div className="relative">
+                    <Server className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
+                    <input 
+                      type="text" 
                       required
-                      autoFocus
-                      className="w-full bg-background border border-border rounded-xl px-4 py-4 pl-12 text-white focus:outline-none focus:ring-2 focus:ring-accent-primary/20 transition-all placeholder:text-gray-700"
-                      placeholder="e.g. Primary Kubernetes API"
+                      placeholder="e.g. Production API Node"
+                      className="premium-input w-full pl-12"
                       value={formData.project_name}
-                      onChange={(e) => setFormData({ ...formData, project_name: e.target.value })}
+                      onChange={(e) => setFormData({...formData, project_name: e.target.value})}
                     />
                   </div>
-                </div>
+               </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase text-gray-500 tracking-widest ml-1">Endpoint URI</label>
-                  <div className="relative group">
-                    <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-accent-primary transition-colors" size={20} />
-                    <input
+               <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white uppercase tracking-[0.2em] ml-1">Universal Resource Identifier (URI)</label>
+                  <div className="relative">
+                    <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
+                    <input 
+                      type="url" 
                       required
-                      type="url"
-                      className="w-full bg-background border border-border rounded-xl px-4 py-4 pl-12 text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary/20 transition-all placeholder:text-gray-700"
-                      placeholder="https://api.myapp.com/v1/health"
+                      placeholder="https://api.yourdomain.com"
+                      className="premium-input w-full pl-12 font-mono"
                       value={formData.url}
-                      onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                      onChange={(e) => setFormData({...formData, url: e.target.value})}
                     />
                   </div>
-                </div>
+               </div>
+            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-black uppercase text-gray-500 tracking-widest ml-1">Poll Frequency</label>
-                    <div className="relative">
-                      <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" size={20} />
-                      <select
-                        className="w-full bg-background border border-border rounded-xl px-4 py-4 pl-12 text-white focus:outline-none focus:ring-2 focus:ring-accent-primary/20 transition-all appearance-none cursor-pointer"
-                        value={formData.frequency}
-                        onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
-                      >
-                        <option value="3s">3 Seconds (Nitro)</option>
-                        <option value="10s">10 Seconds</option>
-                        <option value="30s">30 Seconds</option>
-                        <option value="60s">60 Seconds</option>
-                      </select>
-                    </div>
-                  </div>
+            <div className="space-y-4">
+               <label className="text-[10px] font-black text-white uppercase tracking-[0.2em] ml-1">Polling Intensity</label>
+               <div className="grid grid-cols-2 gap-3">
+                 {frequencies.map((freq) => (
+                   <button
+                    key={freq.value}
+                    type="button"
+                    onClick={() => setFormData({...formData, frequency: freq.value})}
+                    className={`
+                      p-4 rounded-xl border flex flex-col items-center gap-2 transition-all
+                      ${formData.frequency === freq.value 
+                        ? 'bg-accent-primary/10 border-accent-primary text-white shadow-accent-glow' 
+                        : 'bg-surface/30 border-border text-muted hover:border-white/20'}
+                    `}
+                   >
+                     {freq.pulse && <div className="w-1.5 h-1.5 rounded-full bg-accent-primary animate-pulse"></div>}
+                     <span className="text-xs font-bold uppercase tracking-widest">{freq.label}</span>
+                   </button>
+                 ))}
+               </div>
+            </div>
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-black uppercase text-gray-500 tracking-widest ml-1">Protocol Type</label>
-                    <div className="relative">
-                      <Server className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" size={20} />
-                      <select
-                        className="w-full bg-background border border-border rounded-xl px-4 py-4 pl-12 text-white focus:outline-none focus:ring-2 focus:ring-accent-primary/20 transition-all appearance-none cursor-pointer"
-                        value={formData.monitor_type}
-                        onChange={(e) => setFormData({ ...formData, monitor_type: e.target.value })}
-                      >
-                        <option value="HTTP">REST / HTTPS</option>
-                        <option value="PING">ICMP Ping</option>
-                        <option value="TCP">TCP Socket</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4 p-5 bg-white/[0.02] border border-border rounded-2xl">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <label className="text-sm font-bold text-gray-300">Alert Sensitivity</label>
-                      <p className="text-[10px] text-gray-500 uppercase font-black">Latency Threshold</p>
-                    </div>
-                    <span className="text-accent-primary font-mono font-bold">{formData.threshold_ms}ms</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="100"
-                    max="10000"
-                    step="100"
-                    className="w-full accent-accent-primary"
-                    value={formData.threshold_ms}
-                    onChange={(e) => setFormData({ ...formData, threshold_ms: parseInt(e.target.value) })}
+            <div className="space-y-2">
+               <label className="text-[10px] font-black text-white uppercase tracking-[0.2em] ml-1">Critical Alert Destination</label>
+               <div className="relative">
+                  <Plus className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
+                  <input 
+                    type="email" 
+                    placeholder="alerts@yourdomain.com"
+                    className="premium-input w-full pl-12"
+                    value={formData.alert_email}
+                    onChange={(e) => setFormData({...formData, alert_email: e.target.value})}
                   />
-                  <div className="flex items-center gap-2 text-[10px] text-gray-500 italic">
-                    <AlertCircle size={12} />
-                    Flags slow responses beyond this threshold as "Warning" state.
-                  </div>
-                </div>
+               </div>
+               <p className="text-[10px] text-muted ml-1">We'll broadcast outages to this address instantly.</p>
+            </div>
+
+            {error && (
+              <div className="p-4 rounded-xl bg-status-down/10 border border-status-down/20 text-status-down text-xs font-bold animate-in fade-in">
+                {error}
               </div>
+            )}
 
-              {error && (
-                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-start gap-3">
-                  <AlertCircle size={18} className="mt-0.5" />
-                  {error}
-                </div>
+            <button 
+              disabled={loading || success}
+              className={`premium-button w-full py-4 text-base tracking-widest uppercase font-black transition-all ${
+                success ? 'bg-status-up hover:bg-status-up' : ''
+              }`}
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+              ) : success ? (
+                <CheckCircle2 size={20} />
+              ) : (
+                <Zap size={20} />
               )}
+              {loading ? 'Initializing Mesh...' : success ? 'Deployment Successful' : 'Deploy Monitor'}
+            </button>
+          </form>
+        </motion.div>
 
-              <button 
-                type="submit" 
-                disabled={loading}
-                className="w-full premium-button py-4 text-sm font-black flex items-center justify-center gap-2 group tracking-widest uppercase"
-              >
-                {loading ? 'Sychronizing Probes...' : (
-                  <>
-                    Initialize Engine
-                    <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
-        </div>
+        {/* SIDEBAR INFO */}
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="space-y-6"
+        >
+           <div className="glass-card !p-6 border-accent-primary/10">
+              <div className="w-10 h-10 rounded-xl bg-accent-primary/10 border border-accent-primary/20 flex items-center justify-center text-accent-primary mb-4">
+                 <Shield size={20} />
+              </div>
+              <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-widest leading-tight">Privacy Consensus</h3>
+              <p className="text-xs text-muted leading-relaxed">
+                H.O.M.E uses local ZK-Proof generation for anomaly detection. Your target URIs are never sold or shared with 3rd parties.
+              </p>
+           </div>
+
+           <div className="glass-card !p-6 border-white/5 bg-white/[0.02]">
+              <div className="flex items-center gap-2 mb-4">
+                 <Clock size={16} className="text-status-warn" />
+                 <span className="text-[10px] font-black uppercase text-white tracking-widest">Polling Logic</span>
+              </div>
+              <p className="text-xs text-muted leading-relaxed">
+                Intensity defines how frequently our edge nodes probe your target. <span className="text-white font-bold tracking-tight">Real-time</span> is recommended for critical production APIs.
+              </p>
+           </div>
+
+           <div className="p-4 rounded-2xl bg-accent-primary/5 border border-accent-primary/10 flex items-start gap-3">
+              <Info className="text-accent-primary shrink-0" size={18} />
+              <p className="text-[10px] text-muted font-medium leading-normal italic">
+                Pro Tip: You can group monitors into virtual zones in the Settings panel.
+              </p>
+           </div>
+        </motion.div>
       </div>
     </div>
   );

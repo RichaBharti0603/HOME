@@ -3,25 +3,25 @@ import React from 'react';
 const StatusBadge = ({ status }) => {
   const config = {
     UP: {
-      bg: 'bg-green-500/10',
-      text: 'text-green-500',
-      border: 'border-green-500/20',
-      dot: 'bg-green-500',
+      bg: 'bg-status-up/10',
+      text: 'text-status-up',
+      border: 'border-status-up/20',
+      dot: 'bg-status-up',
       label: 'Operational'
     },
     DOWN: {
-      bg: 'bg-red-500/10',
-      text: 'text-red-500',
-      border: 'border-red-500/20',
-      dot: 'bg-red-500',
+      bg: 'bg-status-down/10',
+      text: 'text-status-down',
+      border: 'border-status-down/20',
+      dot: 'bg-status-down',
       label: 'Outage'
     },
     UNKNOWN: {
-      bg: 'bg-gray-500/10',
-      text: 'text-gray-500',
-      border: 'border-gray-500/20',
-      dot: 'bg-gray-500',
-      label: 'Synchronizing'
+      bg: 'bg-muted/10',
+      text: 'text-muted',
+      border: 'border-muted/20',
+      dot: 'bg-muted',
+      label: 'Signal Lost'
     },
   };
 
