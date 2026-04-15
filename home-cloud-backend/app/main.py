@@ -7,9 +7,10 @@ import logging
 from app.database import engine, Base
 import app.models.user
 import app.models.monitor
+import app.alerts.models  # Import alert models
 
 # Routers
-from app.routes import auth, monitor as monitor_route
+from app.routes import auth, monitor as monitor_route, alerts as alerts_route
 
 # ============================================
 # Logging
@@ -74,6 +75,7 @@ app.add_middleware(
 # ============================================
 app.include_router(auth.router)
 app.include_router(monitor_route.router)
+app.include_router(alerts_route.router)
 
 
 # ============================================

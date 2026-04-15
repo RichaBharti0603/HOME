@@ -1,35 +1,45 @@
-# app/worker/tasks.py
-# WHY: Tasks are the units of work Celery executes.
-# This file is the skeleton — real logic gets added in Phase 2+.
-# The @celery_app.task decorator registers the function with Celery.
-
 from app.worker.celery_app import celery_app
+from app.database import SessionLocal
+from app.models.monitor import Monitor
+from app.monitoring.checker import MonitoringEngine
+from app.alerts.service import AlertService
 import logging
 
 logger = logging.getLogger(__name__)
 
 
 @celery_app.task(
-    name="app.worker.tasks.run_all_monitors",  # Explicit name (best practice)
-                                                # Without this, renaming the
-                                                # function breaks queued tasks
-    bind=True,          # 'bind=True' gives access to 'self' (the task instance)
-                        # Needed for retries: self.retry(exc=e)
-    max_retries=3,      # Retry failed tasks up to 3 times
-    default_retry_delay=60,  # Wait 60 seconds between retries
+    name="app.worker.tasks.run_all_monitors",
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60,
 )
 def run_all_monitors(self):
-    """
-    Master task: fetches all active monitors from DB and
-    dispatches individual check tasks for each one.
+    db = SessionLocal()
     
-    This is the 'fan-out' pattern:
-    1 master task → N individual check tasks (one per URL)
-    """
-    logger.info("🔍 Starting monitoring sweep...")
-    # Full implementation in Phase 5
-    # For now, just confirm Celery is working
-    return {"status": "sweep_started", "monitors_checked": 0}
+    try:
+        monitors = db.query(Monitor).all()
+        
+        if not monitors:
+            logger.warning("No monitors found")
+            return {"status": "complete", "monitors_checked": 0}
+        
+        logger.info(f"Dispatching {len(monitors)} monitoring tasks")
+        
+        for monitor in monitors:
+            check_single_monitor.delay(monitor.id)
+        
+        return {
+            "status": "dispatched",
+            "monitors_checked": len(monitors),
+            "message": f"Dispatched {len(monitors)} monitoring tasks"
+        }
+    
+    except Exception as e:
+        logger.error(f"Error in run_all_monitors: {type(e).__name__}: {e}")
+        raise
+    finally:
+        db.close()
 
 
 @celery_app.task(
@@ -38,11 +48,49 @@ def run_all_monitors(self):
     max_retries=3,
     default_retry_delay=30,
 )
-def check_single_monitor(self, monitor_id: str):
-    """
-    Check a single URL monitor.
-    Called by run_all_monitors for each registered URL.
-    Full implementation in Phase 2 + Phase 5.
-    """
-    logger.info(f"Checking monitor: {monitor_id}")
-    return {"monitor_id": monitor_id, "status": "pending"}
+def check_single_monitor(self, monitor_id: int):
+    db = SessionLocal()
+    
+    try:
+        monitor = db.query(Monitor).filter(Monitor.id == monitor_id).first()
+        
+        if not monitor:
+            logger.warning(f"Monitor {monitor_id} not found")
+            return {"monitor_id": monitor_id, "status": "not_found"}
+        
+        logger.info(f"Checking monitor {monitor_id}: {monitor.url}")
+        
+        check_result = MonitoringEngine.run_full_check(monitor.url)
+        monitor.status = check_result.status.value.upper()
+        db.commit()
+        
+        logger.info(f"Monitor {monitor_id} check result: {monitor.status}")
+        
+        alert_sent = AlertService.send_alert(
+            db=db,
+            monitor_id=monitor_id,
+            check_result=check_result
+        )
+        
+        return {
+            "monitor_id": monitor_id,
+            "url": monitor.url,
+            "status": monitor.status,
+            "alert_sent": alert_sent,
+            "check_duration_ms": check_result.total_duration_ms,
+        }
+    
+    except Exception as e:
+        logger.error(f"Error checking monitor {monitor_id}: {type(e).__name__}: {e}")
+        
+        try:
+            raise self.retry(exc=e, countdown=self.request.retries * 30)
+        except:
+            return {
+                "monitor_id": monitor_id,
+                "status": "error",
+                "error": str(e),
+                "retries_exhausted": True,
+            }
+    finally:
+        db.close()

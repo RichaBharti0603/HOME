@@ -1,17 +1,16 @@
-import requests
+import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models.monitor import Monitor
+from app.monitoring.checker import MonitoringEngine
+from app.alerts.service import AlertService
 
-
+logger = logging.getLogger(__name__)
 scheduler = BackgroundScheduler()
 
 
-# ============================================
-# CORE MONITORING LOGIC
-# ============================================
 def check_monitors():
     db: Session = SessionLocal()
 
@@ -19,29 +18,47 @@ def check_monitors():
         monitors = db.query(Monitor).all()
 
         if not monitors:
-            print("⚠️ No monitors found")
+            logger.warning("No monitors found")
             return
+
+        logger.info(f"Starting monitoring sweep ({len(monitors)} monitors)")
+        
+        checked_count = 0
+        alerts_triggered = 0
 
         for monitor in monitors:
             try:
-                print(f"🔍 Checking: {monitor.url}")
+                logger.debug(f"Checking: {monitor.url}")
 
-                response = requests.get(monitor.url, timeout=5)
+                check_result = MonitoringEngine.run_full_check(monitor.url)
+                monitor.status = check_result.status.value.upper()
+                db.commit()
+                
+                logger.info(f"Check complete: {monitor.url} → {monitor.status}")
 
-                if response.status_code == 200:
-                    monitor.status = "UP"
-                    print(f"✅ {monitor.url} is UP")
-                else:
-                    monitor.status = "DOWN"
-                    print(f"❌ {monitor.url} is DOWN (Status: {response.status_code})")
+                alert_sent = AlertService.send_alert(
+                    db=db,
+                    monitor_id=monitor.id,
+                    check_result=check_result
+                )
+                
+                if alert_sent:
+                    alerts_triggered += 1
+                
+                checked_count += 1
 
             except Exception as e:
-                monitor.status = "DOWN"
-                print(f"🚨 {monitor.url} failed: {str(e)}")
+                logger.error(f"Check failed for {monitor.url}: {type(e).__name__}: {e}")
+                monitor.status = "UNKNOWN"
+                db.commit()
 
-        db.commit()
-        print("💾 Status updated in DB")
+        logger.info(
+            f"Monitoring sweep complete | "
+            f"Checked: {checked_count} | Alerts: {alerts_triggered}"
+        )
 
+    except Exception as e:
+        logger.error(f"Scheduler error: {type(e).__name__}: {e}")
     finally:
         db.close()
 

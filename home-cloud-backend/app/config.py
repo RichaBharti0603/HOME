@@ -28,6 +28,14 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     alert_from_email: str = ""
 
+    # Slack alerts (optional)
+    slack_webhook_url: str = ""  # Can be set per monitor via API
+
+    # SMS alerts via Twilio (optional)
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_phone_from: str = ""
+
     class Config:
         # Tell Pydantic to read from .env file
         env_file = ".env"
