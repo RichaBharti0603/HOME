@@ -1,121 +1,116 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import "./auth.css";
-import { apiLogin } from "../lib/api";
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Mail, Lock, ArrowRight, Shield, Activity } from 'lucide-react';
+import api from '../utils/api';
 
-const LEFT_CARDS = [
-  { icon: "◎", title: "99.98% Uptime",       sub: "Average across all monitors" },
-  { icon: "⬡", title: "42ms Latency",         sub: "Global edge network" },
-  { icon: "◈", title: "12 Regions",           sub: "Always near your users" },
-  { icon: "⊡", title: "Zero Config",          sub: "Deploy in under 2 minutes" },
-  { icon: "⊘", title: "Instant Alerts",       sub: "PagerDuty, Slack, Webhooks" },
-  { icon: "◧", title: "SOC 2 Ready",          sub: "Compliance out of the box" },
-];
-
-export default function Login() {
+const Login = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
-  const [email, setEmail]       = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState("");
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError("");
-    if (!email || !password) { setError("Email and password are required."); return; }
     setLoading(true);
+    setError('');
     try {
-      const data = await apiLogin(email, password);
-      localStorage.setItem("token", data.access_token);
-      window.location.href = "/dashboard";
+      const response = await api.post('/auth/login', { email, password });
+      localStorage.setItem('token', response.data.access_token);
+      navigate('/dashboard');
     } catch (err) {
-      setError(err.message);
+      setError('Invalid credentials. Please verify your access key.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-page">
+    <div className="min-h-screen bg-background flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent-primary/5 blur-[120px] rounded-full"></div>
+      
+      <div className="w-full max-w-md relative z-10">
+        <div className="text-center mb-8">
+          <div 
+             onClick={() => navigate('/')}
+             className="inline-flex items-center gap-2 mb-6 cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            <div className="w-10 h-10 rounded-xl bg-accent-primary flex items-center justify-center text-white font-black shadow-accent-glow">H</div>
+            <span className="text-2xl font-black text-white tracking-tighter uppercase">H.O.M.E</span>
+          </div>
+          <h1 className="text-3xl font-black text-white tracking-tight">Welcome Back</h1>
+          <p className="text-muted text-sm mt-2">Sign in to your monitoring node</p>
+        </div>
 
-      {/* LEFT */}
-      <div className="auth-left">
-        <span className="auth-left-logo">HOME</span>
-
-        <div className="auth-left-grid">
-          {LEFT_CARDS.map(c => (
-            <div className="auth-grid-card" key={c.title}>
-              <span className="agc-icon">{c.icon}</span>
-              <span className="agc-title">{c.title}</span>
-              <span className="agc-sub">{c.sub}</span>
+        <div className="glass-card !p-8 border-white/5 shadow-2xl">
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Email Address</label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
+                <input 
+                  type="email" 
+                  required
+                  className="premium-input w-full pl-12"
+                  placeholder="admin@h-o-m-e.ai"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
             </div>
-          ))}
-        </div>
 
-        <p className="auth-left-quote">
-          <strong>"Visibility is not optional."</strong> Enterprise infrastructure
-          deserves sovereign, zero-compromise monitoring — that's HOME.
-        </p>
-      </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Access Key</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
+                <input 
+                  type="password" 
+                  required
+                  className="premium-input w-full pl-12"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+            </div>
 
-      {/* RIGHT */}
-      <div className="auth-right">
-        <button className="auth-back" onClick={() => navigate("/")}>
-          ← Back to home
-        </button>
+            {error && (
+              <div className="p-4 rounded-xl bg-status-down/10 border border-status-down/20 text-status-down text-xs font-bold animate-in fade-in slide-in-from-top-2">
+                {error}
+              </div>
+            )}
 
-        <div className="auth-form-header">
-          <h1 className="auth-form-title">Welcome back</h1>
-          <p className="auth-form-sub">Sign in to your H.O.M.E workspace.</p>
-        </div>
-
-        <form className="auth-form" onSubmit={handleLogin} id="login-form">
-          {error && <div className="auth-error">{error}</div>}
-
-          <div className="auth-field">
-            <label className="input-label" htmlFor="login-email">Email address</label>
-            <input
-              id="login-email"
-              className="input-field"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              autoComplete="email"
-            />
-          </div>
-
-          <div className="auth-field">
-            <label className="input-label" htmlFor="login-password">Password</label>
-            <input
-              id="login-password"
-              className="input-field"
-              type="password"
-              placeholder="Your password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              autoComplete="current-password"
-            />
-          </div>
-
-          <div className="auth-submit">
-            <button
-              type="submit"
-              className="btn btn-primary btn-lg"
-              style={{ width: "100%", justifyContent: "center" }}
+            <button 
               disabled={loading}
-              id="login-submit"
+              className="premium-button w-full py-3.5 text-base shadow-xl"
             >
-              {loading ? <span className="spinner" /> : "Sign in"}
+              {loading ? 'Authenticating...' : 'Sign In'}
+              <ArrowRight size={18} />
             </button>
-          </div>
-        </form>
+          </form>
 
-        <p className="auth-switch">
-          Don't have an account?{" "}
-          <button onClick={() => navigate("/register")} id="go-register">Create one</button>
-        </p>
+          <div className="mt-8 pt-6 border-t border-border text-center">
+            <p className="text-sm text-muted">
+              Don't have an account? {' '}
+              <Link to="/register" className="text-accent-primary font-bold hover:underline">Get started free</Link>
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-8 flex items-center justify-center gap-6 opacity-30">
+           <div className="flex items-center gap-1.5 grayscale">
+              <Shield size={14} />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Secure</span>
+           </div>
+           <div className="flex items-center gap-1.5 grayscale">
+              <Activity size={14} />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Uptime 99.99%</span>
+           </div>
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default Login;

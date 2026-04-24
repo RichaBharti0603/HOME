@@ -13,13 +13,20 @@ class Settings(BaseSettings):
     app_env: str = "development"
     debug: bool = True
 
+    # Database — PostgreSQL
+    database_url: str = "postgresql://user:password@localhost:5432/home"
+
     # Redis — Celery uses this as its message broker
-    # The broker is where Celery SENDS tasks to be queued
     redis_url: str = "redis://localhost:6379/0"
 
-    # MongoDB — where monitoring results are stored
-    mongodb_url: str = "mongodb://homeuser:homepassword@localhost:27017/home_db?authSource=admin"
-    mongodb_db_name: str = "home_db"
+    # AI Service URL (Local Ollama via Ngrok)
+    ai_service_url: str = ""
+
+    # Frontend URL (for CORS)
+    frontend_url: str = "http://localhost:5173"
+
+    # API Base URL (for internal references if needed)
+    api_base_url: str = "http://localhost:8000"
 
     # Email alert settings (used in Phase 6)
     smtp_host: str = "smtp.gmail.com"
@@ -34,6 +41,8 @@ class Settings(BaseSettings):
         env_file_encoding = "utf-8"
         # Allow extra fields in .env without crashing
         extra = "ignore"
+        # Support case-insensitive env vars
+        case_sensitive = False
 
 
 # lru_cache ensures we only read the .env file ONCE.
