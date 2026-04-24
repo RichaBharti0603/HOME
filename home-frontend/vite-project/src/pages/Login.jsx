@@ -1,116 +1,90 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Shield, Activity } from 'lucide-react';
-import api from '../utils/api';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "./register.css"; // reuse same styling
 
-const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+export default function Login() {
+
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    try {
-      const response = await api.post('/auth/login', { email, password });
-      localStorage.setItem('token', response.data.access_token);
-      navigate('/dashboard');
-    } catch (err) {
-      setError('Invalid credentials. Please verify your access key.');
-    } finally {
-      setLoading(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const loginUser = async () => {
+
+    const response = await fetch("http://127.0.0.1:8000/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email,
+        password
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alert("Login successful ✅");
+
+      // ✅ store token
+      localStorage.setItem("token", data.access_token);
+
+      // ✅ redirect
+        navigate("/setup");   // instead of dashboard
+
+    } else {
+      alert(data.detail || "Login failed ❌");
     }
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent-primary/5 blur-[120px] rounded-full"></div>
-      
-      <div className="w-full max-w-md relative z-10">
-        <div className="text-center mb-8">
-          <div 
-             onClick={() => navigate('/')}
-             className="inline-flex items-center gap-2 mb-6 cursor-pointer hover:opacity-80 transition-opacity"
-          >
-            <div className="w-10 h-10 rounded-xl bg-accent-primary flex items-center justify-center text-white font-black shadow-accent-glow">H</div>
-            <span className="text-2xl font-black text-white tracking-tighter uppercase">H.O.M.E</span>
-          </div>
-          <h1 className="text-3xl font-black text-white tracking-tight">Welcome Back</h1>
-          <p className="text-muted text-sm mt-2">Sign in to your monitoring node</p>
-        </div>
+    <div className="container">
 
-        <div className="glass-card !p-8 border-white/5 shadow-2xl">
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
-                <input 
-                  type="email" 
-                  required
-                  className="premium-input w-full pl-12"
-                  placeholder="admin@h-o-m-e.ai"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-            </div>
+      {/* LEFT IMAGE GRID */}
+      <div className="image-grid">
+        <img src="/images/img7.jpg" className="grid-img" />
+        <img src="/images/img8.jpg" className="grid-img" />
+        <img src="/images/img9.jpg" className="grid-img" />
+        <img src="/images/img10.jpg" className="grid-img" />
+        <img src="/images/img11.jpg" className="grid-img" />
+        <img src="/images/img12.jpg" className="grid-img" />
+      </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Access Key</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
-                <input 
-                  type="password" 
-                  required
-                  className="premium-input w-full pl-12"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            </div>
+      {/* RIGHT FORM */}
+      <div className="form-card">
 
-            {error && (
-              <div className="p-4 rounded-xl bg-status-down/10 border border-status-down/20 text-status-down text-xs font-bold animate-in fade-in slide-in-from-top-2">
-                {error}
-              </div>
-            )}
+        <h2 className="title">Welcome Back</h2>
+        <p className="subtitle">
+          Login to continue to HOME
+        </p>
 
-            <button 
-              disabled={loading}
-              className="premium-button w-full py-3.5 text-base shadow-xl"
-            >
-              {loading ? 'Authenticating...' : 'Sign In'}
-              <ArrowRight size={18} />
-            </button>
-          </form>
+        <input
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-          <div className="mt-8 pt-6 border-t border-border text-center">
-            <p className="text-sm text-muted">
-              Don't have an account? {' '}
-              <Link to="/register" className="text-accent-primary font-bold hover:underline">Get started free</Link>
-            </p>
-          </div>
-        </div>
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
-        <div className="mt-8 flex items-center justify-center gap-6 opacity-30">
-           <div className="flex items-center gap-1.5 grayscale">
-              <Shield size={14} />
-              <span className="text-[10px] font-bold uppercase tracking-widest">Secure</span>
-           </div>
-           <div className="flex items-center gap-1.5 grayscale">
-              <Activity size={14} />
-              <span className="text-[10px] font-bold uppercase tracking-widest">Uptime 99.99%</span>
-           </div>
-        </div>
+        <button onClick={loginUser}>
+          Login
+        </button>
+
+        {/* REGISTER LINK */}
+        <p className="switch-text">
+          Don’t have an account?{" "}
+          <span onClick={() => navigate("/register")}>
+            Register
+          </span>
+        </p>
+
       </div>
     </div>
   );
-};
-
-export default Login;
+}
