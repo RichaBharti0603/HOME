@@ -47,12 +47,17 @@ services:
   # 3. Frontend
   - type: web
     name: home-frontend
-    env: node
+    env: static
     plan: free
     rootDir: home-frontend/vite-project
-    buildCommand: npm install && npm install -g serve && npm run build
-    startCommand: serve -s dist -l 3000
+    buildCommand: |
+      npm ci --cache .npm-cache
+      npm run build
+    publishDir: ./dist
+    healthCheckPath: /index.html
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: VITE_API_URL
         value: "https://home-backend.onrender.com"
 

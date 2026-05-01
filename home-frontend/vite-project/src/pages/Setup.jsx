@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Zap, Globe, Clock, Shield, 
   ArrowRight, Info, Plus, Server,
-  AlertCircle
+  AlertCircle, CheckCircle2
 } from 'lucide-react';
 import api from '../utils/api';
 import { motion } from 'framer-motion';
@@ -24,12 +24,22 @@ const Setup = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    
+    // Mock for demo token
+    if (localStorage.getItem('token') === 'demo-token') {
+      setTimeout(() => {
+        setSuccess(true);
+        setTimeout(() => navigate('/dashboard'), 1500);
+      }, 1000);
+      return;
+    }
+
     try {
       await api.post('/monitors', formData);
       setSuccess(true);
       setTimeout(() => navigate('/dashboard'), 1500);
     } catch (err) {
-      setError('System rejection: Target URI or Name invalid.');
+      setError('Could not add website. Please check the URL and try again.');
     } finally {
       setLoading(false);
     }
@@ -43,10 +53,10 @@ const Setup = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-10">
+    <div className="max-w-4xl mx-auto space-y-10 py-6">
       <header>
-        <h1 className="text-3xl font-black text-white tracking-tight leading-none mb-2 underline decoration-accent-primary decoration-4 underline-offset-8">Deploy New Monitor</h1>
-        <p className="text-muted font-medium">Link a digital target to your private observation mesh.</p>
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">Add Your Website</h1>
+        <p className="text-gray-500 font-medium">Enter your website details below to start monitoring its health.</p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -54,19 +64,19 @@ const Setup = () => {
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="lg:col-span-2 glass-card !p-8 shadow-2xl"
+          className="lg:col-span-2 glass-card bg-white border-gray-200"
         >
           <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="space-y-4">
+            <div className="space-y-5">
                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-white uppercase tracking-[0.2em] ml-1">Target Project Name</label>
+                  <label className="text-sm font-semibold text-gray-700 ml-1">Website Name</label>
                   <div className="relative">
-                    <Server className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
+                    <Server className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input 
                       type="text" 
                       required
-                      placeholder="e.g. Production API Node"
-                      className="premium-input w-full pl-12"
+                      placeholder="e.g. My Online Store"
+                      className="premium-input w-full pl-12 bg-white"
                       value={formData.project_name}
                       onChange={(e) => setFormData({...formData, project_name: e.target.value})}
                     />
@@ -74,14 +84,14 @@ const Setup = () => {
                </div>
 
                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-white uppercase tracking-[0.2em] ml-1">Universal Resource Identifier (URI)</label>
+                  <label className="text-sm font-semibold text-gray-700 ml-1">Website URL</label>
                   <div className="relative">
-                    <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
+                    <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input 
                       type="url" 
                       required
-                      placeholder="https://api.yourdomain.com"
-                      className="premium-input w-full pl-12 font-mono"
+                      placeholder="https://www.mywebsite.com"
+                      className="premium-input w-full pl-12 bg-white font-mono text-sm"
                       value={formData.url}
                       onChange={(e) => setFormData({...formData, url: e.target.value})}
                     />
@@ -90,7 +100,7 @@ const Setup = () => {
             </div>
 
             <div className="space-y-4">
-               <label className="text-[10px] font-black text-white uppercase tracking-[0.2em] ml-1">Polling Intensity</label>
+               <label className="text-sm font-semibold text-gray-700 ml-1">Check Frequency</label>
                <div className="grid grid-cols-2 gap-3">
                  {frequencies.map((freq) => (
                    <button
@@ -100,52 +110,52 @@ const Setup = () => {
                     className={`
                       p-4 rounded-xl border flex flex-col items-center gap-2 transition-all
                       ${formData.frequency === freq.value 
-                        ? 'bg-accent-primary/10 border-accent-primary text-white shadow-accent-glow' 
-                        : 'bg-surface/30 border-border text-muted hover:border-white/20'}
+                        ? 'bg-indigo-50 border-accent-primary text-accent-primary shadow-sm' 
+                        : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'}
                     `}
                    >
-                     {freq.pulse && <div className="w-1.5 h-1.5 rounded-full bg-accent-primary animate-pulse"></div>}
-                     <span className="text-xs font-bold uppercase tracking-widest">{freq.label}</span>
+                     {freq.pulse && formData.frequency === freq.value && <div className="w-1.5 h-1.5 rounded-full bg-accent-primary animate-pulse"></div>}
+                     <span className="text-sm font-medium">{freq.label}</span>
                    </button>
                  ))}
                </div>
             </div>
 
             <div className="space-y-2">
-               <label className="text-[10px] font-black text-white uppercase tracking-[0.2em] ml-1">Critical Alert Destination</label>
+               <label className="text-sm font-semibold text-gray-700 ml-1">Alert Email</label>
                <div className="relative">
-                  <Plus className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
+                  <Plus className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input 
                     type="email" 
-                    placeholder="alerts@yourdomain.com"
-                    className="premium-input w-full pl-12"
+                    placeholder="alerts@mywebsite.com"
+                    className="premium-input w-full pl-12 bg-white"
                     value={formData.alert_email}
                     onChange={(e) => setFormData({...formData, alert_email: e.target.value})}
                   />
                </div>
-               <p className="text-[10px] text-muted ml-1">We'll broadcast outages to this address instantly.</p>
+               <p className="text-xs text-gray-500 ml-1 mt-1">We'll send notifications here if your site goes down.</p>
             </div>
 
             {error && (
-              <div className="p-4 rounded-xl bg-status-down/10 border border-status-down/20 text-status-down text-xs font-bold animate-in fade-in">
+              <div className="p-3 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-medium animate-in fade-in">
                 {error}
               </div>
             )}
 
             <button 
               disabled={loading || success}
-              className={`premium-button w-full py-4 text-base tracking-widest uppercase font-black transition-all ${
-                success ? 'bg-status-up hover:bg-status-up' : ''
+              className={`premium-button w-full py-3.5 text-base font-semibold transition-all shadow-md ${
+                success ? 'bg-status-up hover:bg-status-up shadow-none' : ''
               }`}
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
               ) : success ? (
                 <CheckCircle2 size={20} />
               ) : (
-                <Zap size={20} />
+                <Plus size={20} />
               )}
-              {loading ? 'Initializing Mesh...' : success ? 'Deployment Successful' : 'Deploy Monitor'}
+              {loading ? 'Adding Website...' : success ? 'Website Added Successfully' : 'Add Website'}
             </button>
           </form>
         </motion.div>
@@ -156,30 +166,30 @@ const Setup = () => {
           animate={{ opacity: 1, x: 0 }}
           className="space-y-6"
         >
-           <div className="glass-card !p-6 border-accent-primary/10">
-              <div className="w-10 h-10 rounded-xl bg-accent-primary/10 border border-accent-primary/20 flex items-center justify-center text-accent-primary mb-4">
+           <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-accent-primary mb-4">
                  <Shield size={20} />
               </div>
-              <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-widest leading-tight">Privacy Consensus</h3>
-              <p className="text-xs text-muted leading-relaxed">
-                H.O.M.E uses local ZK-Proof generation for anomaly detection. Your target URIs are never sold or shared with 3rd parties.
+              <h3 className="text-sm font-bold text-gray-900 mb-2">Private & Secure</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                We monitor your website from the outside. Your internal data, customer information, and code remain entirely private.
               </p>
            </div>
 
-           <div className="glass-card !p-6 border-white/5 bg-white/[0.02]">
+           <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                  <Clock size={16} className="text-status-warn" />
-                 <span className="text-[10px] font-black uppercase text-white tracking-widest">Polling Logic</span>
+                 <span className="text-sm font-bold text-gray-900">Check Frequency</span>
               </div>
-              <p className="text-xs text-muted leading-relaxed">
-                Intensity defines how frequently our edge nodes probe your target. <span className="text-white font-bold tracking-tight">Real-time</span> is recommended for critical production APIs.
+              <p className="text-sm text-gray-500 leading-relaxed">
+                This determines how often we verify your site is online. <span className="text-gray-900 font-semibold">Real-time</span> checking is best for mission-critical stores and apps.
               </p>
            </div>
 
-           <div className="p-4 rounded-2xl bg-accent-primary/5 border border-accent-primary/10 flex items-start gap-3">
-              <Info className="text-accent-primary shrink-0" size={18} />
-              <p className="text-[10px] text-muted font-medium leading-normal italic">
-                Pro Tip: You can group monitors into virtual zones in the Settings panel.
+           <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-100 flex items-start gap-3">
+              <Info className="text-accent-primary shrink-0 mt-0.5" size={18} />
+              <p className="text-sm text-accent-primary font-medium leading-relaxed">
+                Tip: You can change these settings later from your dashboard anytime.
               </p>
            </div>
         </motion.div>

@@ -7,20 +7,20 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#0B1220',
-        surface: '#111827',
-        border: '#1F2937',
-        foreground: '#E2E8F0',
-        muted: '#94A3B8',
+        background: '#FAFAFA', // Soft light gray
+        surface: '#FFFFFF', // Pure white
+        border: '#E5E7EB', // Gray 200
+        foreground: '#111827', // Gray 900
+        muted: '#6B7280', // Gray 500
         accent: {
-          primary: '#6366F1',   // Indigo 500
-          secondary: '#A855F7', // Purple 500
-          glow: 'rgba(99, 102, 241, 0.15)',
+          primary: '#4F46E5',   // Indigo 600
+          secondary: '#818CF8', // Indigo 400
+          glow: 'rgba(79, 70, 229, 0.15)',
         },
         status: {
-          up: '#22C55E',
-          down: '#EF4444',
-          warn: '#F59E0B',
+          up: '#10B981', // Emerald 500
+          down: '#EF4444', // Red 500
+          warn: '#F59E0B', // Amber 500
         }
       },
       borderRadius: {
@@ -31,8 +31,8 @@ export default {
         'glass': '20px',
       },
       boxShadow: {
-        'premium': '0 10px 40px -10px rgba(0, 0, 0, 0.5)',
-        'accent-glow': '0 0 20px rgba(99, 102, 241, 0.3)',
+        'premium': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+        'accent-glow': '0 4px 14px 0 rgba(79, 70, 229, 0.39)',
       }
     },
   },

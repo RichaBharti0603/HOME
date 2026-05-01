@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Shield, Activity } from 'lucide-react';
+import { Mail, Lock, Shield, Activity, Zap } from 'lucide-react';
 import api from '../utils/api';
 
 const Login = () => {
@@ -14,21 +14,34 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Demo Mode Intercept
+    if (email === 'demo@home.ai' && password === 'Demo@123') {
+      setTimeout(() => {
+        localStorage.setItem('token', 'demo-token');
+        navigate('/dashboard');
+      }, 800);
+      return;
+    }
+
     try {
       const response = await api.post('/auth/login', { email, password });
       localStorage.setItem('token', response.data.access_token);
       navigate('/dashboard');
     } catch (err) {
-      setError('Invalid credentials. Please verify your access key.');
+      setError('Invalid email or password. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleDemoLogin = () => {
+    setEmail('demo@home.ai');
+    setPassword('Demo@123');
+  };
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent-primary/5 blur-[120px] rounded-full"></div>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 relative overflow-hidden">
       
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
@@ -36,38 +49,41 @@ const Login = () => {
              onClick={() => navigate('/')}
              className="inline-flex items-center gap-2 mb-6 cursor-pointer hover:opacity-80 transition-opacity"
           >
-            <div className="w-10 h-10 rounded-xl bg-accent-primary flex items-center justify-center text-white font-black shadow-accent-glow">H</div>
-            <span className="text-2xl font-black text-white tracking-tighter uppercase">H.O.M.E</span>
+            <div className="w-10 h-10 rounded-xl bg-accent-primary flex items-center justify-center text-white font-bold shadow-sm">H</div>
+            <span className="text-2xl font-bold text-gray-900 tracking-tight">H.O.M.E</span>
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tight">Welcome Back</h1>
-          <p className="text-muted text-sm mt-2">Sign in to your monitoring node</p>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Welcome back</h1>
+          <p className="text-gray-500 mt-2">Log in to your dashboard</p>
         </div>
 
-        <div className="glass-card !p-8 border-white/5 shadow-2xl">
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Email Address</label>
+        <div className="glass-card !p-8 bg-white border-gray-200 shadow-xl">
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 ml-1">Email Address</label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input 
                   type="email" 
                   required
-                  className="premium-input w-full pl-12"
-                  placeholder="admin@h-o-m-e.ai"
+                  className="premium-input w-full pl-12 bg-white"
+                  placeholder="admin@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Access Key</label>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between ml-1">
+                 <label className="text-sm font-medium text-gray-700">Password</label>
+                 <button type="button" className="text-xs text-accent-primary font-medium hover:underline">Forgot?</button>
+              </div>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input 
                   type="password" 
                   required
-                  className="premium-input w-full pl-12"
+                  className="premium-input w-full pl-12 bg-white"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -76,36 +92,55 @@ const Login = () => {
             </div>
 
             {error && (
-              <div className="p-4 rounded-xl bg-status-down/10 border border-status-down/20 text-status-down text-xs font-bold animate-in fade-in slide-in-from-top-2">
+              <div className="p-3 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-medium animate-in fade-in">
                 {error}
               </div>
             )}
 
             <button 
               disabled={loading}
-              className="premium-button w-full py-3.5 text-base shadow-xl"
+              className="premium-button w-full py-3.5 text-base shadow-md mt-6"
             >
-              {loading ? 'Authenticating...' : 'Sign In'}
-              <ArrowRight size={18} />
+              {loading ? 'Signing in...' : 'Log in'}
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-border text-center">
-            <p className="text-sm text-muted">
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or try it out</span>
+              </div>
+            </div>
+
+            <button 
+              onClick={handleDemoLogin}
+              type="button"
+              className="secondary-button w-full mt-6 py-3.5 text-base font-medium"
+            >
+              <Zap size={18} className="text-accent-primary" />
+              Fill Demo Credentials
+            </button>
+          </div>
+
+          <div className="mt-8 text-center">
+            <p className="text-sm text-gray-500">
               Don't have an account? {' '}
-              <Link to="/register" className="text-accent-primary font-bold hover:underline">Get started free</Link>
+              <Link to="/register" className="text-accent-primary font-semibold hover:underline">Sign up</Link>
             </p>
           </div>
         </div>
 
-        <div className="mt-8 flex items-center justify-center gap-6 opacity-30">
-           <div className="flex items-center gap-1.5 grayscale">
+        <div className="mt-8 flex items-center justify-center gap-6 opacity-60">
+           <div className="flex items-center gap-1.5 text-gray-500">
               <Shield size={14} />
-              <span className="text-[10px] font-bold uppercase tracking-widest">Secure</span>
+              <span className="text-xs font-semibold uppercase tracking-wider">Secure</span>
            </div>
-           <div className="flex items-center gap-1.5 grayscale">
+           <div className="flex items-center gap-1.5 text-gray-500">
               <Activity size={14} />
-              <span className="text-[10px] font-bold uppercase tracking-widest">Uptime 99.99%</span>
+              <span className="text-xs font-semibold uppercase tracking-wider">Uptime 99.99%</span>
            </div>
         </div>
       </div>

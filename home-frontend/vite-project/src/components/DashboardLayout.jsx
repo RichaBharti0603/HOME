@@ -9,18 +9,18 @@ const DashboardLayout = ({ children }) => {
 
   // Map pathnames to Titles
   const titleMap = {
-    '/dashboard': 'Operations Control',
-    '/setup': 'Nodes & Monitors',
+    '/dashboard': 'Overview',
+    '/setup': 'Monitors',
     '/incidents': 'Incident Timeline',
-    '/assistant': 'AI Intelligence',
-    '/settings': 'System Settings',
-    '/analytics': 'Advanced Analytics',
+    '/assistant': 'AI Assistant',
+    '/settings': 'Settings',
+    '/analytics': 'Analytics',
   };
 
-  const title = titleMap[location.pathname] || 'System Node';
+  const title = titleMap[location.pathname] || 'Dashboard';
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex overflow-hidden">
+    <div className="min-h-screen bg-gray-50 text-foreground flex overflow-hidden">
       {/* Sidebar - Desktop */}
       <Sidebar isCollapsed={isCollapsed} setCollapsed={setCollapsed} />
 
