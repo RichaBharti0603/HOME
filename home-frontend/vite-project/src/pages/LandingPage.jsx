@@ -14,32 +14,32 @@ const LandingPage = () => {
     {
       title: 'Real-time Monitoring',
       desc: 'Instant alerts when your website goes down or slows down.',
-      icon: Activity,
+      image: '/images/1.png',
     },
     {
       title: 'Smart AI Assistant',
       desc: 'Get friendly explanations for any issues your site faces.',
-      icon: MessageSquare,
+      image: '/images/2.png',
     },
     {
       title: 'Private & Secure',
       desc: 'Your data stays private. We do not sell or share it.',
-      icon: Shield,
+      image: '/images/3.jpg',
     },
     {
       title: 'Global Checks',
       desc: 'We check your website from multiple locations worldwide.',
-      icon: Globe,
+      image: '/images/4.jpg',
     },
     {
       title: 'Easy Alerts',
       desc: 'Get notified via Email or Slack the moment something breaks.',
-      icon: Zap,
+      image: '/images/5.jpg',
     },
     {
       title: 'Clear Reports',
       desc: 'Understand your uptime and performance with simple charts.',
-      icon: BarChart3,
+      image: '/images/6.jpg',
     },
   ];
 
@@ -142,8 +142,8 @@ const LandingPage = () => {
                 whileHover={{ y: -5 }}
                 className="bg-gray-50 rounded-2xl p-8 border border-gray-100 hover:border-indigo-100 transition-colors shadow-sm"
               >
-                <div className="w-12 h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-accent-primary mb-6 shadow-sm">
-                  <f.icon size={24} />
+                <div className="w-12 h-12 rounded-xl border border-gray-200 mb-6 shadow-sm overflow-hidden bg-white">
+                  <img src={f.image} alt={f.title} className="w-full h-full object-cover" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">{f.title}</h3>
                 <p className="text-gray-600 leading-relaxed">{f.desc}</p>

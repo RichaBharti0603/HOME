@@ -19,27 +19,32 @@ router = APIRouter(prefix="/ai", tags=["AI & ZKML"])
 
 def call_external_ai(prompt: str) -> dict:
     """
-    Calls the external AI service with timeout and retry logic.
+    Calls the local Ollama service.
     """
-    if not settings.ai_service_url:
-        return {"response": None, "fallback": True}
-
-    url = f"{settings.ai_service_url}/analyze"
+    # Default to localhost if not specified
+    base_url = settings.ai_service_url or "http://localhost:11434"
+    url = f"{base_url}/api/generate"
     
-    # 3s timeout as requested
-    timeout = httpx.Timeout(3.0, connect=3.0)
+    # Give Ollama a bit more time to respond
+    timeout = httpx.Timeout(15.0, connect=3.0)
     
-    # 1 retry as requested
+    payload = {
+        "model": "llama3",
+        "prompt": prompt,
+        "stream": False
+    }
+    
     for attempt in range(2):
         try:
             with httpx.Client(timeout=timeout) as client:
-                response = client.post(url, json={"prompt": prompt})
+                response = client.post(url, json=payload)
                 response.raise_for_status()
-                return response.json()
+                data = response.json()
+                return {"response": data.get("response")}
         except Exception as e:
-            logger.warning(f"AI Service attempt {attempt + 1} failed: {e}")
-            if attempt == 1: # Last attempt
-                logger.error(f"AI Service unreachable at {url} after retries")
+            logger.warning(f"Ollama attempt {attempt + 1} failed: {e}")
+            if attempt == 1:
+                logger.error(f"Ollama unreachable at {url}")
     
     return {"message": "AI service unavailable", "fallback": True}
 

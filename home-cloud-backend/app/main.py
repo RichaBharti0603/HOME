@@ -22,6 +22,8 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
+logging.getLogger("apscheduler").setLevel(logging.WARNING)
+
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
@@ -33,7 +35,8 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.app_name}...")
     
-    # Database tables are now managed by Alembic
+    # Ensure database tables are created (useful for SQLite fast prototyping)
+    Base.metadata.create_all(bind=engine)
     logger.info("Database migration check completed")
 
     # Start Scheduler

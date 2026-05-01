@@ -23,11 +23,11 @@ const Register = () => {
     setLoading(true);
     setError('');
     try {
-      await api.post('/auth/register', {
-        username: formData.username,
+      await api.post('/register', {
         email: formData.email,
         password: formData.password
       });
+      alert('Account created successfully');
       navigate('/login');
     } catch (err) {
       setError('Registration failed. Email may already be registered.');
