@@ -41,12 +41,8 @@ const Register = () => {
       
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-           <div 
-             onClick={() => navigate('/')}
-             className="inline-flex items-center gap-2 mb-6 cursor-pointer hover:opacity-80 transition-opacity"
-          >
-            <div className="w-10 h-10 rounded-xl bg-accent-primary flex items-center justify-center text-white font-bold shadow-sm">H</div>
-            <span className="text-2xl font-bold text-gray-900 tracking-tight">H.O.M.E</span>
+           <div className="flex items-center justify-center mb-8">
+            <img src="/images/logo.jpg" alt="Logo" className="h-28 w-auto object-contain rounded-xl shadow-sm" />
           </div>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Create your account</h1>
           <p className="text-gray-500 mt-2">Start monitoring your website today</p>

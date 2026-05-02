@@ -9,6 +9,7 @@ from app.models.log import MonitorLog
 from app.models.incident import Incident
 from app.schemas.monitor import MonitorCreate, MonitorResponse, IncidentResponse
 from app.schemas.log import MonitorLogResponse
+from app.monitoring.checker import MonitoringEngine, check_dns
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="", tags=["Monitors"])
@@ -19,10 +20,28 @@ router = APIRouter(prefix="", tags=["Monitors"])
 # ============================================
 @router.post("/monitors", response_model=MonitorResponse)
 def create_monitor(data: MonitorCreate, db: Session = Depends(get_db)):
+    url = str(data.url)
+    
+    if not url.startswith(("http://", "https://")):
+        raise HTTPException(status_code=400, detail="URL must start with http:// or https://")
+        
+    try:
+        hostname, _, _ = MonitoringEngine._parse_url(url)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Malformed URL: {e}")
+        
+    if not hostname:
+        raise HTTPException(status_code=400, detail="Could not extract hostname from URL")
+        
+    # Lightweight DNS Check
+    dns_res = check_dns(hostname)
+    if not dns_res.success:
+        raise HTTPException(status_code=400, detail=f"DNS Check Failed: {dns_res.error}")
+
     try:
         monitor = Monitor(
             project_name=data.project_name,
-            url=str(data.url),
+            url=url,
             frequency=data.frequency,
             monitor_type=data.monitor_type or "HTTP",
             status="UNKNOWN",

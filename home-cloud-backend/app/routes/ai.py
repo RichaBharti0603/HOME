@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from app.database import get_db
 from app.models.monitor import Monitor
 from app.models.log import MonitorLog
+from app.models.incident import Incident
 from app.zkml.anomaly_detector import detector as zkml_detector
 from app.config import get_settings
 import httpx
@@ -166,20 +167,28 @@ def ai_explain(monitor_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Monitor not found")
     
     logs = db.query(MonitorLog).filter(MonitorLog.monitor_id == monitor_id).order_by(MonitorLog.timestamp.desc()).limit(10).all()
+    incidents = db.query(Incident).filter(Incident.monitor_id == monitor_id).order_by(Incident.started_at.desc()).limit(1).all()
     
+    incident_context = ""
+    if incidents:
+        latest_incident = incidents[0]
+        incident_context = f"Latest Incident: Status {latest_incident.status}, Severity: {latest_incident.severity}, Summary: {latest_incident.summary}, Root Cause: {latest_incident.root_cause}"
+        
     # If external AI is configured, try it first
     if settings.ai_service_url:
-        prompt = f"Explain why monitor {monitor.project_name} (URL: {monitor.url}) might be experiencing issues based on these recent logs: {logs}"
+        prompt = f"You are a DevOps AI. Explain why monitor {monitor.project_name} (URL: {monitor.url}) might be experiencing issues based on this data. Make it human readable and friendly. {incident_context}. Recent logs: {[l.error_message for l in logs]}"
         external_res = call_external_ai(prompt)
         if not external_res.get("fallback"):
             return {"response": external_res.get("response") or external_res.get("message")}
 
+    # Local fallback logic utilizing classification engine
+    if incidents and incidents[0].status == "OPEN":
+        explanation = f"H.O.M.E Analysis for {monitor.project_name}: We've detected an ongoing failure.\n\n"
+        explanation += f"System Classification: {incidents[0].summary}\n"
+        explanation += f"Severity: {incidents[0].severity}\n"
+        explanation += f"Detailed AI Insight: {incidents[0].root_cause}\n\n"
+        explanation += "This is generated from our local privacy-first diagnostic engine."
+        return {"response": explanation}
+
     explanation = analyze_logs(logs, monitor.project_name)
-    
-    # Add root cause suggestions
-    if "Error: 500" in explanation or "Internal Server Error" in str(logs[0].error_message):
-        explanation += "\n\nRoot Cause Analysis: The server returned a 500 status. This typically means an unhandled exception in the backend code or a configuration error. Check your server logs and recent deployments."
-    elif "Timeout" in str(logs[0].error_message):
-        explanation += "\n\nRoot Cause Analysis: The request timed out. This could be due to high server load, database deadlocks, or network congestion."
-    
     return {"response": explanation}

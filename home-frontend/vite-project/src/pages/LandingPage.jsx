@@ -46,11 +46,10 @@ const LandingPage = () => {
   return (
     <div className="bg-background text-foreground selection:bg-accent-primary/20 min-h-screen">
       {/* NAVBAR */}
-      <nav className="fixed top-0 w-full z-[100] border-b border-border bg-white/80 backdrop-blur-md px-12 h-20 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-accent-primary flex items-center justify-center text-white font-bold">H</div>
-          <span className="text-xl font-bold tracking-tight text-gray-900">H.O.M.E</span>
-        </div>
+      <nav className="fixed top-0 w-full z-[100] border-b border-border bg-white/80 backdrop-blur-md px-12 h-24 flex items-center justify-between">
+          <div className="flex items-center">
+            <img src="/images/logo.jpg" alt="Logo" className="h-20 w-auto object-contain rounded-lg shadow-sm" />
+          </div>
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
            <a href="#features" className="hover:text-gray-900 transition-colors">Features</a>
            <a href="#pricing" className="hover:text-gray-900 transition-colors">Pricing</a>
@@ -157,10 +156,9 @@ const LandingPage = () => {
       <footer className="pt-20 pb-10 px-12 border-t border-border bg-gray-50">
          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             <div className="col-span-1 md:col-span-2 space-y-6">
-               <div className="flex items-center gap-2">
-                 <div className="w-8 h-8 rounded-lg bg-accent-primary flex items-center justify-center text-white font-bold">H</div>
-                 <span className="text-xl font-bold text-gray-900 tracking-tight">H.O.M.E</span>
-               </div>
+               <div className="flex items-center mb-6 md:mb-0">
+                 <img src="/images/logo.jpg" alt="Logo" className="h-20 w-auto object-contain rounded-lg shadow-sm" />
+             </div>
                <p className="text-gray-500 max-w-sm">The friendly, reliable monitoring platform for businesses that care about their uptime.</p>
             </div>
             
@@ -183,7 +181,7 @@ const LandingPage = () => {
             </div>
          </div>
          <div className="max-w-7xl mx-auto pt-8 border-t border-gray-200 flex justify-between items-center text-sm text-gray-500">
-            <span>© 2026 H.O.M.E Labs</span>
+            <span>© 2026 Labs</span>
             <span>Made with care</span>
          </div>
       </footer>

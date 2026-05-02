@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, Activity, Zap, 
   Clock, Shield, Settings, LogOut,
-  ChevronRight, BarChart3, MessageSquare
+  ChevronRight, BarChart3, MessageSquare, Workflow
 } from 'lucide-react';
 
 const Sidebar = ({ isCollapsed, setCollapsed }) => {
@@ -12,6 +12,7 @@ const Sidebar = ({ isCollapsed, setCollapsed }) => {
     { label: 'Monitors', icon: Activity, path: '/setup' },
     { label: 'Incidents', icon: Zap, path: '/incidents' },
     { label: 'AI Assistant', icon: MessageSquare, path: '/assistant' },
+    { label: 'System Flow', icon: Workflow, path: '/system-flow' },
     { label: 'Analytics', icon: BarChart3, path: '/analytics' },
     { label: 'Settings', icon: Settings, path: '/settings' },
   ];
@@ -20,13 +21,12 @@ const Sidebar = ({ isCollapsed, setCollapsed }) => {
     <div className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 transition-all duration-300 z-50 ${isCollapsed ? 'w-20' : 'w-64'}`}>
       <div className="p-6 flex items-center justify-between">
         {!isCollapsed && (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-accent-primary flex items-center justify-center text-white font-bold">H</div>
-            <span className="text-xl font-bold text-gray-900 tracking-tight">H.O.M.E</span>
+          <div className="flex items-center">
+            <img src="/images/logo.jpg" alt="Logo" className="h-16 w-auto object-contain rounded-lg shadow-sm" />
           </div>
         )}
         {isCollapsed && (
-          <div className="w-8 h-8 rounded-lg bg-accent-primary flex items-center justify-center text-white font-bold mx-auto">H</div>
+          <img src="/images/logo.jpg" alt="Logo" className="h-12 w-12 object-cover rounded-lg mx-auto shadow-sm" />
         )}
       </div>
 

@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const Assistant = () => {
   const [messages, setMessages] = useState([
-    { role: 'bot', content: "Hi there! I'm your H.O.M.E AI assistant. I'm actively monitoring your websites and I'm ready to answer any questions you have. How can I help you today?" }
+    { role: 'bot', content: "Hi there! I'm your AI assistant. I'm actively monitoring your websites and I'm ready to answer any questions you have. How can I help you today?" }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -110,7 +110,7 @@ const Assistant = () => {
                     {msg.content}
                   </div>
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-1 inline-block">
-                    {msg.role === 'bot' ? 'H.O.M.E AI' : 'You'}
+                    {msg.role === 'bot' ? 'AI' : 'You'}
                   </span>
                 </div>
               </motion.div>

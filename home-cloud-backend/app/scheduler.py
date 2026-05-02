@@ -102,8 +102,9 @@ def check_all_monitors():
             
             # Use a tiny buffer or default if last_checked is None
             if monitor.last_checked is None or (now - monitor.last_checked).total_seconds() >= freq_sec:
-                # Run sync task
-                perform_check(monitor.id)
+                # Dispatch Celery background task
+                from app.worker.tasks import check_single_monitor
+                check_single_monitor.delay(monitor.id)
     except Exception as e:
         print(f"Main Scheduler Loop Error: {str(e)}")
     finally:

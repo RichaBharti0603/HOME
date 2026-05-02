@@ -12,6 +12,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import IncidentTimeline from './pages/IncidentTimeline';
 import Settings from './pages/Settings';
 import Analytics from './pages/Analytics';
+import SystemFlow from './pages/SystemFlow';
 
 function App() {
   return (
@@ -77,6 +78,14 @@ function App() {
           <ProtectedRoute>
             <DashboardLayout>
               <Analytics />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/system-flow" element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <SystemFlow />
             </DashboardLayout>
           </ProtectedRoute>
         } />

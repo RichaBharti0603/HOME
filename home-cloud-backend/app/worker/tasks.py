@@ -10,6 +10,7 @@ from app.models.log import MonitorLog
 from app.models.incident import Incident
 from app.models.alert import Alert
 from app.monitoring.checker import MonitoringEngine
+from app.monitoring.classifier import classify_failure
 from datetime import datetime
 import logging
 
@@ -45,6 +46,7 @@ def check_single_monitor(self, monitor_id: int):
             return {"error": "Monitor not found"}
 
         result = MonitoringEngine.run_full_check(monitor.url)
+        classification = classify_failure(result)
         
         # Determine status
         status = result.status.value.upper()
@@ -60,7 +62,7 @@ def check_single_monitor(self, monitor_id: int):
             monitor_id=monitor.id,
             status=status,
             response_time=int(result.total_duration_ms),
-            error_message=result.message,
+            error_message=classification["explanation"],
             dns_ms=int(result.dns.duration_ms) if result.dns else None,
             tcp_ms=int(result.tcp.duration_ms) if result.tcp else None,
             http_ms=int(result.http.response_time_ms) if result.http else None
@@ -73,16 +75,17 @@ def check_single_monitor(self, monitor_id: int):
             incident = Incident(
                 monitor_id=monitor.id,
                 status="OPEN",
-                summary=f"Monitor {monitor.project_name} is DOWN",
-                root_cause=result.message
+                severity=classification["severity"],
+                summary=f"Monitor {monitor.project_name} is DOWN: {classification['type']}",
+                root_cause=classification["explanation"]
             )
             db.add(incident)
             
-            # Send alert (to be implemented)
+            # Send alert
             alert = Alert(
                 monitor_id=monitor.id,
                 type="DOWN",
-                message=f"CRITICAL: {monitor.project_name} is down. Error: {result.message}"
+                message=f"CRITICAL: {monitor.project_name} is down. {classification['explanation']}"
             )
             db.add(alert)
 
