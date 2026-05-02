@@ -53,6 +53,21 @@ def classify_failure(result: CheckResult) -> dict:
                     "explanation": f"HTTP request failed: {result.http.error}",
                     "confidence": 0.80
                 }
+        else:
+            if result.http.expected_status_matched is False:
+                return {
+                    "type": "UNEXPECTED_STATUS_CODE",
+                    "severity": "HIGH",
+                    "explanation": result.http.error or "Server returned an unexpected HTTP status code.",
+                    "confidence": 0.95
+                }
+            if result.http.content_matched is False:
+                return {
+                    "type": "CONTENT_VALIDATION_FAILURE",
+                    "severity": "HIGH",
+                    "explanation": result.http.error or "The expected keyword was not found in the response body.",
+                    "confidence": 0.95
+                }
                 
     if result.status == CheckStatus.DEGRADED:
         return {

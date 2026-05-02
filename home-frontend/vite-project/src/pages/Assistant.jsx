@@ -59,10 +59,10 @@ const Assistant = () => {
               <Sparkles size={24} className="relative z-10" />
            </div>
            <div>
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">AI Assistant</h1>
-              <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-extrabold text-foreground tracking-tight">AI Assistant</h1>
+              <div className="flex items-center gap-2 mt-1">
                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Online & Ready</span>
+                 <span className="text-[11px] font-bold text-muted uppercase tracking-widest">Online & Ready</span>
               </div>
            </div>
         </div>
@@ -77,11 +77,11 @@ const Assistant = () => {
         </div>
       </header>
 
-      <div className="flex-1 bg-white border border-gray-200 rounded-2xl flex flex-col overflow-hidden shadow-sm">
-        <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between shrink-0">
-           <div className="flex items-center gap-2 text-gray-600">
+      <div className="flex-1 bento-card flex flex-col overflow-hidden !p-0">
+        <div className="p-4 border-b border-border/80 bg-gray-50/50 flex items-center justify-between shrink-0">
+           <div className="flex items-center gap-2 text-muted">
               <ShieldCheck size={16} className="text-emerald-500" />
-              <span className="text-xs font-bold uppercase tracking-wider">Your data is private</span>
+              <span className="text-[11px] font-bold uppercase tracking-widest">Your data is private</span>
            </div>
         </div>
 
@@ -137,12 +137,12 @@ const Assistant = () => {
           </AnimatePresence>
         </div>
 
-        <div className="p-4 md:p-6 border-t border-gray-100 bg-white shrink-0">
+        <div className="p-4 md:p-6 border-t border-border/80 bg-surface shrink-0">
            <form onSubmit={handleSend} className="relative">
               <input 
                  type="text" 
                  placeholder="Ask me to analyze your latest downtime, or summarize website performance..."
-                 className="w-full pl-6 pr-14 py-4 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary transition-all shadow-inner placeholder:text-gray-400"
+                 className="w-full pl-6 pr-14 py-4 bg-background border border-border/80 rounded-xl text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary transition-all placeholder:text-muted/60"
                  value={input}
                  onChange={(e) => setInput(e.target.value)}
                  disabled={loading}
@@ -157,9 +157,9 @@ const Assistant = () => {
            </form>
            <div className="mt-3 flex flex-wrap gap-2">
               {[
-                { label: 'Why did my site go offline?', icon: Activity },
-                { label: 'How can I improve load times?', icon: Zap },
-                { label: 'Summarize weekly performance', icon: ShieldCheck }
+                { label: 'Explain the recent incident', icon: Activity },
+                { label: 'Why was this alert delayed?', icon: Zap },
+                { label: 'Show likely root cause', icon: ShieldCheck }
               ].map((chip) => (
                 <button 
                   key={chip.label}

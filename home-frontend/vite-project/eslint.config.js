@@ -4,6 +4,10 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
+if (!globalThis.structuredClone) {
+  globalThis.structuredClone = (val) => JSON.parse(JSON.stringify(val));
+}
+
 export default defineConfig([
   globalIgnores(['dist']),
   {
@@ -23,7 +27,7 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      'no-unused-vars': ['warn', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
 ])

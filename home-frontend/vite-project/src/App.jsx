@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Setup from './pages/Setup';
+import ControlCenter from './pages/ControlCenter';
 import Assistant from './pages/Assistant';
 import MonitorDetail from './pages/MonitorDetail';
 import Login from './pages/Login';
@@ -34,10 +35,12 @@ function App() {
           </ProtectedRoute>
         } />
         
-        <Route path="/setup" element={
+        <Route path="/setup" element={<Navigate to="/control-center" />} />
+        
+        <Route path="/control-center" element={
           <ProtectedRoute>
             <DashboardLayout>
-              <Setup />
+              <ControlCenter />
             </DashboardLayout>
           </ProtectedRoute>
         } />

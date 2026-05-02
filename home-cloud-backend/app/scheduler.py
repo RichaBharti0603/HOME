@@ -32,7 +32,11 @@ def perform_check(monitor_id: int):
 
         print(f"H.O.M.E Engine -> Checking: {monitor.url}")
         
-        result = MonitoringEngine.run_full_check(monitor.url)
+        result = MonitoringEngine.run_full_check(
+            url=monitor.url,
+            expected_status=monitor.expected_status,
+            expected_keyword=monitor.expected_keyword
+        )
         
         status = result.status.value.upper() # UP, DOWN, DEGRADED
         error_msg = result.message

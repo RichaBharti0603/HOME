@@ -27,11 +27,11 @@ const Analytics = () => {
     <div className="space-y-8 py-4">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">Analytics & Reporting</h1>
-          <p className="text-gray-500 font-medium">Detailed performance metrics across all monitored websites.</p>
+          <h1 className="text-4xl font-extrabold text-foreground tracking-tight mb-2">Analytics & Reporting</h1>
+          <p className="text-muted font-medium text-sm">Detailed performance metrics across all monitored websites.</p>
         </div>
         <div className="flex gap-3">
-           <button className="px-5 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-700 font-semibold text-sm hover:bg-gray-50 transition-all shadow-sm">Export PDF</button>
+           <button className="secondary-button">Export PDF</button>
            <button className="premium-button px-5 py-2.5 text-sm">Generate Insights</button>
         </div>
       </header>
@@ -48,64 +48,64 @@ const Analytics = () => {
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ delay: i * 0.1 }}
-             className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm"
+             className="bento-card"
            >
              <div className="flex justify-between items-start mb-6">
                 <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-accent-primary">
                    <card.icon size={20} />
                 </div>
-                <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-md ${card.up ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                <div className={`flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-md ${card.up ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
                    {card.up ? <TrendingUp size={14} /> : <Activity size={14} />}
                    {card.trend}
                 </div>
              </div>
-             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{card.label}</p>
-             <h2 className="text-3xl font-bold text-gray-900 tracking-tight">{card.val}</h2>
+             <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-1">{card.label}</p>
+             <h2 className="text-3xl font-extrabold text-foreground tracking-tight">{card.val}</h2>
            </motion.div>
          ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
          {/* REGIONAL PERFORMANCE */}
-         <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-200 shadow-sm">
-            <h3 className="text-sm font-bold text-gray-900 mb-8 flex items-center gap-2">
+         <div className="bento-card">
+            <h3 className="text-sm font-extrabold text-foreground mb-8 flex items-center gap-2">
                <Activity size={18} className="text-accent-primary" />
                Weekly Availability
             </h3>
-            <div className="h-[300px] w-full">
+            <div className="h-[300px] w-full -ml-4">
                <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={uptimeData}>
-                     <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-                     <XAxis dataKey="day" stroke="#9CA3AF" tick={{fill: '#6B7280', fontSize: 12}} axisLine={false} tickLine={false} />
+                     <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+                     <XAxis dataKey="day" stroke="#94A3B8" tick={{fill: '#64748B', fontSize: 12, fontWeight: 'bold'}} axisLine={false} tickLine={false} />
                      <YAxis hide domain={[98, 100]} />
                      <Tooltip 
-                       contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                       itemStyle={{ color: '#111827', fontWeight: '600' }}
-                       cursor={{fill: '#F3F4F6'}}
+                       contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                       itemStyle={{ color: '#0F172A', fontWeight: 'bold' }}
+                       cursor={{fill: '#F1F5F9'}}
                      />
-                     <Bar dataKey="uptime" fill="#4F46E5" radius={[4, 4, 0, 0]} />
+                     <Bar dataKey="uptime" fill="#3B82F6" radius={[6, 6, 0, 0]} />
                   </BarChart>
                </ResponsiveContainer>
             </div>
-            <div className="flex justify-between mt-6 pt-6 border-t border-gray-100">
+            <div className="flex justify-between mt-6 pt-6 border-t border-border/60">
                <div>
-                  <p className="text-xs text-gray-500 font-semibold mb-1">Best Day</p>
-                  <p className="text-sm font-bold text-gray-900">Tuesday (100%)</p>
+                  <p className="text-[11px] text-muted font-bold uppercase tracking-wider mb-1">Best Day</p>
+                  <p className="text-sm font-extrabold text-foreground">Tuesday (100%)</p>
                </div>
                <div className="text-right">
-                  <p className="text-xs text-gray-500 font-semibold mb-1">Lowest Day</p>
-                  <p className="text-sm font-bold text-amber-500">Wednesday (98.5%)</p>
+                  <p className="text-[11px] text-muted font-bold uppercase tracking-wider mb-1">Lowest Day</p>
+                  <p className="text-sm font-extrabold text-amber-500">Wednesday (98.5%)</p>
                </div>
             </div>
          </div>
 
          {/* ENGINE UTILIZATION */}
-         <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-200 shadow-sm">
-            <h3 className="text-sm font-bold text-gray-900 mb-8 flex items-center gap-2">
+         <div className="bento-card">
+            <h3 className="text-sm font-extrabold text-foreground mb-8 flex items-center gap-2">
                <ShieldCheck size={18} className="text-emerald-500" />
                Performance Index
             </h3>
-            <div className="h-[300px] w-full">
+            <div className="h-[300px] w-full -ml-4">
                <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={uptimeData}>
                     <defs>
@@ -114,11 +114,11 @@ const Analytics = () => {
                         <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-                    <XAxis dataKey="day" stroke="#9CA3AF" tick={{fill: '#6B7280', fontSize: 12}} axisLine={false} tickLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+                    <XAxis dataKey="day" stroke="#94A3B8" tick={{fill: '#64748B', fontSize: 12, fontWeight: 'bold'}} axisLine={false} tickLine={false} />
                     <Tooltip 
-                       contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                       itemStyle={{ color: '#111827', fontWeight: '600' }}
+                       contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                       itemStyle={{ color: '#0F172A', fontWeight: 'bold' }}
                     />
                     <Area 
                       type="monotone" 
@@ -131,14 +131,14 @@ const Analytics = () => {
                   </AreaChart>
                </ResponsiveContainer>
             </div>
-            <div className="flex items-center gap-4 mt-6 pt-6 border-t border-gray-100">
-               <div className="flex-1 p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col items-center">
-                  <span className="text-xs text-gray-500 font-semibold mb-1">Data Processed</span>
-                  <span className="text-base font-bold text-gray-900">1.4 GB</span>
+            <div className="flex items-center gap-4 mt-6 pt-6 border-t border-border/60">
+               <div className="flex-1 p-4 bg-background rounded-xl border border-border/80 flex flex-col items-center">
+                  <span className="text-[11px] text-muted font-bold uppercase tracking-wider mb-1">Data Processed</span>
+                  <span className="text-base font-extrabold text-foreground">1.4 GB</span>
                </div>
-               <div className="flex-1 p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col items-center">
-                  <span className="text-xs text-gray-500 font-semibold mb-1">Active Monitors</span>
-                  <span className="text-base font-bold text-gray-900">3 Total</span>
+               <div className="flex-1 p-4 bg-background rounded-xl border border-border/80 flex flex-col items-center">
+                  <span className="text-[11px] text-muted font-bold uppercase tracking-wider mb-1">Active Monitors</span>
+                  <span className="text-base font-extrabold text-foreground">3 Total</span>
                </div>
             </div>
          </div>

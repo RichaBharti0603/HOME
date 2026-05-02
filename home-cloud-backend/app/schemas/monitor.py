@@ -1,13 +1,23 @@
 from pydantic import BaseModel, HttpUrl
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
-class MonitorCreate(BaseModel):
+class MonitorBase(BaseModel):
     project_name: str
-    url: HttpUrl
-    frequency: str  # e.g., "30s"
-    monitor_type: Optional[str] = "HTTP"
+    url: str
+    frequency: str
+    monitor_type: str
+    check_types: Optional[List[str]] = ["HTTP"]
+    alert_policy: Optional[Dict[str, Any]] = {"channels": ["dashboard"]}
+    retry_policy: Optional[Dict[str, Any]] = {"max_retries": 3, "delay_seconds": 30}
+    active_status: Optional[bool] = True
+    expected_status: Optional[int] = None
+    expected_keyword: Optional[str] = None
+    tenant_id: Optional[str] = None
     threshold_ms: Optional[int] = 2000
+
+class MonitorCreate(MonitorBase):
+    pass
 
 
 class IncidentResponse(BaseModel):
@@ -24,16 +34,12 @@ class IncidentResponse(BaseModel):
         from_attributes = True
 
 
-class MonitorResponse(BaseModel):
+class MonitorResponse(MonitorBase):
     id: int
-    project_name: str
-    url: str
-    frequency: str
-    monitor_type: str
+    user_id: Optional[int] = None
     status: str
     last_checked: Optional[datetime] = None
     last_response_time: Optional[int] = None
-    threshold_ms: int
     created_at: datetime
 
     class Config:

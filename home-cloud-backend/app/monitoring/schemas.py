@@ -72,6 +72,10 @@ class HTTPResult:
     content_length: int = 0               # Response body size in bytes
     error: Optional[str] = None
     
+    # Lightweight checks
+    content_matched: Optional[bool] = None
+    expected_status_matched: Optional[bool] = None
+    
     # WHY track is_ssl_valid separately?
     # A site can return 200 OK but have an expired SSL cert.
     # That's a failure that HTTP status code alone won't catch.
@@ -142,5 +146,7 @@ class CheckResult:
                 "content_length": self.http.content_length,
                 "error": self.http.error,
                 "is_ssl_valid": self.http.is_ssl_valid,
+                "content_matched": self.http.content_matched,
+                "expected_status_matched": self.http.expected_status_matched,
             } if self.http else None,
         }

@@ -1,35 +1,78 @@
 import React from 'react';
-import { Bell, Search, User, ShieldCheck } from 'lucide-react';
+import { Bell, Search, Zap, Activity, BarChart3, Settings, ShieldCheck, MessageSquare, Workflow } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
 
 const Topbar = ({ title }) => {
+  const location = useLocation();
+  
+  const navItems = [
+    { label: 'Dashboard', path: '/dashboard', icon: Activity },
+    { label: 'Control Center', path: '/control-center', icon: ShieldCheck },
+    { label: 'Incidents', path: '/incidents', icon: Zap },
+    { label: 'Assistant', path: '/assistant', icon: MessageSquare },
+    { label: 'System Flow', path: '/system-flow', icon: Workflow },
+    { label: 'Analytics', path: '/analytics', icon: BarChart3 },
+  ];
+
   return (
-    <header className="h-16 border-b border-gray-200 bg-white px-8 flex items-center justify-between sticky top-0 z-40">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 tracking-tight">{title || 'Overview'}</h2>
-      </div>
-
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100">
-          <div className="w-2 h-2 rounded-full bg-status-up animate-pulse"></div>
-          <span className="text-xs font-semibold text-status-up tracking-wide">System Online</span>
+    <header className="fixed top-0 left-0 w-full z-50 px-6 py-4 flex justify-center pointer-events-none">
+      
+      {/* Centered Floating Pill Navbar */}
+      <div className="w-full max-w-7xl flex items-center justify-between pointer-events-auto">
+        
+        {/* Logo / Brand */}
+        <div className="flex items-center gap-3 bg-surface/80 backdrop-blur-xl border border-white/40 shadow-floating px-4 py-2.5 rounded-bento">
+          <div className="w-8 h-8 bg-accent-primary rounded-lg flex items-center justify-center shadow-accent-glow">
+            <span className="text-white font-bold text-lg">H</span>
+          </div>
+          <span className="font-bold text-gray-900 tracking-tight hidden md:block">H.O.M.E</span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button className="p-2 text-gray-400 hover:text-gray-700 transition-colors">
-            <Search size={20} />
+        {/* Main Navigation Segment */}
+        <nav className="hidden lg:flex items-center gap-1 bg-surface/80 backdrop-blur-xl border border-white/40 shadow-floating p-1.5 rounded-pill">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) => `
+                flex items-center gap-2 px-4 py-2 rounded-pill text-sm font-semibold transition-all duration-300
+                ${isActive 
+                  ? 'bg-white text-accent-primary shadow-sm ring-1 ring-gray-900/5' 
+                  : 'text-muted hover:text-foreground hover:bg-gray-50/50'}
+              `}
+            >
+              <span className="tracking-wide">{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* Right Utilities */}
+        <div className="flex items-center gap-3 bg-surface/80 backdrop-blur-xl border border-white/40 shadow-floating p-1.5 rounded-pill">
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50/80 border border-emerald-100/50 mr-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-status-up animate-pulse"></div>
+            <span className="text-[11px] font-bold text-emerald-600 tracking-wide uppercase">Operational</span>
+          </div>
+
+          <button className="p-2.5 text-muted hover:text-foreground bg-white rounded-full shadow-sm ring-1 ring-gray-900/5 transition-all">
+            <Search size={16} />
           </button>
-          <button className="p-2 text-gray-400 hover:text-gray-700 transition-colors relative">
-            <Bell size={20} />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-accent-primary rounded-full border-2 border-white"></span>
+          
+          <button className="p-2.5 text-muted hover:text-foreground bg-white rounded-full shadow-sm ring-1 ring-gray-900/5 transition-all relative">
+            <Bell size={16} />
+            <span className="absolute top-2 right-2.5 w-2 h-2 bg-accent-primary rounded-full border-2 border-white"></span>
           </button>
-          <div className="h-6 w-px bg-gray-200 mx-2"></div>
-          <button className="flex items-center gap-2 p-1 pl-3 rounded-full bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-all">
-            <span className="text-sm font-medium text-gray-700 px-1">Admin</span>
-            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-accent-primary shadow-sm">
-              AD
-            </div>
+          
+          <NavLink to="/settings" className="p-2.5 text-muted hover:text-foreground bg-white rounded-full shadow-sm ring-1 ring-gray-900/5 transition-all">
+             <Settings size={16} />
+          </NavLink>
+
+          <div className="h-4 w-px bg-border/60 mx-1 hidden sm:block"></div>
+          
+          <button className="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-xs font-bold text-accent-primary shadow-sm border border-indigo-100/50 hover:bg-indigo-100 transition-colors mr-1">
+            AD
           </button>
         </div>
+
       </div>
     </header>
   );

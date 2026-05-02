@@ -11,6 +11,7 @@ from app.models.incident import Incident
 from app.models.alert import Alert
 from app.monitoring.checker import MonitoringEngine
 from app.monitoring.classifier import classify_failure
+from app.alerts.engine import AlertPolicyEngine
 from datetime import datetime
 import logging
 
@@ -45,7 +46,11 @@ def check_single_monitor(self, monitor_id: int):
         if not monitor:
             return {"error": "Monitor not found"}
 
-        result = MonitoringEngine.run_full_check(monitor.url)
+        result = MonitoringEngine.run_full_check(
+            url=monitor.url,
+            expected_status=monitor.expected_status,
+            expected_keyword=monitor.expected_keyword
+        )
         classification = classify_failure(result)
         
         # Determine status
@@ -69,25 +74,37 @@ def check_single_monitor(self, monitor_id: int):
         )
         db.add(log)
 
+        # Implement Retry Logic
+        max_retries = monitor.retry_policy.get("max_retries", 3) if monitor.retry_policy else 3
+        alert_engine = AlertPolicyEngine(db)
+
         # Incident Logic
         if status == "DOWN" and prev_status != "DOWN":
-            # New incident
-            incident = Incident(
-                monitor_id=monitor.id,
-                status="OPEN",
-                severity=classification["severity"],
-                summary=f"Monitor {monitor.project_name} is DOWN: {classification['type']}",
-                root_cause=classification["explanation"]
-            )
-            db.add(incident)
+            # Check consecutive failures
+            recent_logs = db.query(MonitorLog).filter(
+                MonitorLog.monitor_id == monitor.id
+            ).order_by(MonitorLog.timestamp.desc()).limit(max_retries - 1).all()
             
-            # Send alert
-            alert = Alert(
-                monitor_id=monitor.id,
-                type="DOWN",
-                message=f"CRITICAL: {monitor.project_name} is down. {classification['explanation']}"
-            )
-            db.add(alert)
+            consecutive_down = 1 + sum(1 for l in recent_logs if l.status == "DOWN")
+            
+            if consecutive_down >= max_retries:
+                # Real failure
+                incident = Incident(
+                    monitor_id=monitor.id,
+                    status="OPEN",
+                    severity=classification["severity"],
+                    summary=f"Monitor {monitor.project_name} is DOWN: {classification['type']}",
+                    root_cause=classification["explanation"]
+                )
+                db.add(incident)
+                
+                # Send alert via Policy Engine
+                msg = f"CRITICAL: {monitor.project_name} is down. {classification['explanation']}"
+                alert_engine.process_incident(monitor, incident, "DOWN", msg)
+            else:
+                logger.info(f"Monitor {monitor.id} failed ({consecutive_down}/{max_retries}). Retrying before alert.")
+                # We can keep it DOWN or WARNING. The code below commits it as DOWN.
+                # It's fine to mark it as DOWN in status but not alert.
 
         elif status == "UP" and prev_status == "DOWN":
             # Resolve incident
@@ -100,13 +117,15 @@ def check_single_monitor(self, monitor_id: int):
                 open_incident.status = "RESOLVED"
                 open_incident.resolved_at = datetime.utcnow()
             
-            # Recovery alert
-            alert = Alert(
-                monitor_id=monitor.id,
-                type="RECOVERY",
-                message=f"RECOVERY: {monitor.project_name} is back online."
-            )
-            db.add(alert)
+                # Recovery alert
+                msg = f"RECOVERY: {monitor.project_name} is back online."
+                alert_engine.process_incident(monitor, open_incident, "RECOVERY", msg)
+
+        elif status == "DEGRADED":
+            # Optional: alert on degraded if severity is high
+            if classification["severity"] == "HIGH":
+                msg = f"DEGRADED: {monitor.project_name} is degraded. {classification['explanation']}"
+                alert_engine.process_incident(monitor, None, "DEGRADED", msg)
 
         db.commit()
         

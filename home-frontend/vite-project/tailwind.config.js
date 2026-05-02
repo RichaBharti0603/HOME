@@ -7,15 +7,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#FAFAFA', // Soft light gray
+        background: '#F0F2F5', // Softer, more modern slate background (like Image 1)
         surface: '#FFFFFF', // Pure white
-        border: '#E5E7EB', // Gray 200
-        foreground: '#111827', // Gray 900
-        muted: '#6B7280', // Gray 500
+        border: '#EAECEF', // Very soft border
+        foreground: '#0F172A', // Slate 900
+        muted: '#64748B', // Slate 500
         accent: {
-          primary: '#4F46E5',   // Indigo 600
-          secondary: '#818CF8', // Indigo 400
-          glow: 'rgba(79, 70, 229, 0.15)',
+          primary: '#3B82F6',   // Blue 500 (Clean, professional blue like references)
+          secondary: '#60A5FA', // Blue 400
+          glow: 'rgba(59, 130, 246, 0.15)',
         },
         status: {
           up: '#10B981', // Emerald 500
@@ -24,15 +24,18 @@ export default {
         }
       },
       borderRadius: {
+        'bento': '24px',
         'premium': '16px',
+        'pill': '9999px',
         'xl': '12px',
       },
       backdropBlur: {
         'glass': '20px',
       },
       boxShadow: {
-        'premium': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
-        'accent-glow': '0 4px 14px 0 rgba(79, 70, 229, 0.39)',
+        'premium': '0 10px 30px -10px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02)',
+        'floating': '0 20px 40px -10px rgba(0, 0, 0, 0.08), 0 10px 15px -3px rgba(0, 0, 0, 0.04)',
+        'accent-glow': '0 8px 20px 0 rgba(59, 130, 246, 0.25)',
       }
     },
   },

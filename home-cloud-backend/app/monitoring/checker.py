@@ -250,7 +250,7 @@ def check_tcp(host: str, port: int) -> TCPResult:
 # LAYER 3: HTTP CHECK
 # ─────────────────────────────────────────────────────────────
 
-def check_http(url: str) -> HTTPResult:
+def check_http(url: str, expected_status: Optional[int] = None, expected_keyword: Optional[str] = None) -> HTTPResult:
     """
     Perform a full HTTP GET request and analyze the response.
     
@@ -298,12 +298,33 @@ def check_http(url: str) -> HTTPResult:
             is_ssl = url.lower().startswith("https://")
             
             # Determine success based on status code
-            success = response.status_code in HEALTHY_STATUS_CODES
+            if expected_status:
+                success = response.status_code == expected_status
+                expected_status_matched = success
+            else:
+                success = response.status_code in HEALTHY_STATUS_CODES
+                expected_status_matched = None
 
+            # Determine keyword match
+            content_matched = None
+            if success and expected_keyword:
+                content_matched = expected_keyword in response.text
+                if not content_matched:
+                    success = False
+            
             logger.debug(
                 f"HTTP {response.status_code} from {url} "
                 f"in {t.elapsed_ms}ms (redirects: {redirect_count})"
             )
+
+            error_msg = None
+            if not success:
+                if expected_status and expected_status_matched is False:
+                    error_msg = f"HTTP {response.status_code}: Expected status {expected_status}"
+                elif expected_keyword and content_matched is False:
+                    error_msg = f"Keyword Validation Failed: '{expected_keyword}' not found in response"
+                else:
+                    error_msg = f"HTTP {response.status_code}: {response.reason}"
 
             return HTTPResult(
                 success=success,
@@ -313,7 +334,9 @@ def check_http(url: str) -> HTTPResult:
                 final_url=response.url,
                 content_length=len(response.content),
                 is_ssl_valid=True if is_ssl else None,  # None = not applicable
-                error=None if success else f"HTTP {response.status_code}: {response.reason}",
+                error=error_msg,
+                content_matched=content_matched,
+                expected_status_matched=expected_status_matched,
             )
 
         except SSLError as e:
@@ -409,7 +432,7 @@ class MonitoringEngine:
         return hostname, scheme, port
 
     @classmethod
-    def run_full_check(cls, url: str) -> CheckResult:
+    def run_full_check(cls, url: str, expected_status: Optional[int] = None, expected_keyword: Optional[str] = None) -> CheckResult:
         """
         Run the complete DNS → TCP → HTTP monitoring pipeline.
         
@@ -487,7 +510,7 @@ class MonitoringEngine:
             )
 
         # ── Layer 3: HTTP ──────────────────────────────────────
-        http_result = check_http(url)
+        http_result = check_http(url, expected_status=expected_status, expected_keyword=expected_keyword)
 
         total_ms = round((time.perf_counter() - overall_start) * 1000, 2)
 
