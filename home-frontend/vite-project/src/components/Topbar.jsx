@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Search, Zap, Activity, BarChart3, Settings, ShieldCheck, MessageSquare, Workflow, Cpu } from 'lucide-react';
+import { Bell, Search, Zap, Activity, BarChart3, Settings, ShieldCheck, MessageSquare, Workflow, Cpu, Server } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 const Topbar = ({ title }) => {
