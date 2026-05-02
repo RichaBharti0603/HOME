@@ -9,6 +9,8 @@ services:
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port 8000
     healthCheckPath: /health
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
       - key: DATABASE_URL
         fromDatabase:
           name: home-db
@@ -32,8 +34,10 @@ services:
     plan: free
     rootDir: home-cloud-backend
     buildCommand: pip install -r requirements.txt
-    startCommand: celery -A app.worker worker --loglevel=info
+    startCommand: celery -A app.worker.celery_app.celery_app worker --loglevel=info
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
       - key: DATABASE_URL
         fromDatabase:
           name: home-db

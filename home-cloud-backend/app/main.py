@@ -4,11 +4,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.scheduler import start_scheduler
 from app.config import get_settings
 import logging
-from app.database import engine, Base
+from app.database import engine, Base, get_db
 import app.models.user
 import app.models.monitor
 import app.models.log
 import app.models.alert
+from sqlalchemy import text
+import redis
 
 # Routers
 from app.routes import auth, monitor as monitor_route, alert, ai
@@ -35,13 +37,21 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.app_name}...")
     
-    # Ensure database tables are created (useful for SQLite fast prototyping)
-    Base.metadata.create_all(bind=engine)
-    logger.info("Database migration check completed")
+    try:
+        # Ensure database tables are created (useful for SQLite fast prototyping)
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database migration check completed successfully")
+    except Exception as e:
+        logger.error(f"Failed to connect to or migrate the database: {e}")
+        logger.error("The application will continue starting, but database operations will fail.")
 
-    # Start Scheduler
-    start_scheduler()
-    logger.info("Scheduler started")
+    try:
+        # Start Scheduler
+        start_scheduler()
+        logger.info("Scheduler started successfully")
+    except Exception as e:
+        logger.error(f"Failed to start the scheduler (likely Redis connection issue): {e}")
+        logger.error("The application will continue starting, but scheduled tasks will not run.")
 
     yield
 
@@ -99,11 +109,33 @@ async def websocket_endpoint(websocket: WebSocket, monitor_id: str = None):
 # ============================================
 @app.get("/health", tags=["System"])
 async def health_check():
-    return {
+    health_status = {
         "status": "healthy",
         "app": settings.app_name,
         "environment": settings.app_env,
+        "database": "unknown",
+        "redis": "unknown"
     }
+    
+    # Check Database
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        health_status["database"] = "connected"
+    except Exception as e:
+        health_status["database"] = f"disconnected: {str(e)}"
+        health_status["status"] = "degraded"
+        
+    # Check Redis
+    try:
+        r = redis.Redis.from_url(settings.redis_url, socket_connect_timeout=2)
+        r.ping()
+        health_status["redis"] = "connected"
+    except Exception as e:
+        health_status["redis"] = f"disconnected: {str(e)}"
+        health_status["status"] = "degraded"
+        
+    return health_status
 
 
 @app.get("/", tags=["System"])

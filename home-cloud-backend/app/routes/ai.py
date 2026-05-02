@@ -135,7 +135,7 @@ def ai_query(data: AIQuery, db: Session = Depends(get_db)):
             return {"response": external_res.get("response") or external_res.get("message")}
 
     # Simple semantic routing (Local Fallback)
-    if "why" in query and "down" in query:
+    if "why" in data.query and "down" in data.query:
         # Find all down monitors
         down_monitors = db.query(Monitor).filter(Monitor.status == "DOWN").all()
         if not down_monitors:
@@ -148,7 +148,7 @@ def ai_query(data: AIQuery, db: Session = Depends(get_db)):
         
         return {"response": "\n\n".join(explanations)}
 
-    if "status" in query or "overview" in query:
+    if "status" in data.query or "overview" in data.query:
         monitors = db.query(Monitor).all()
         up = len([m for m in monitors if m.status == "UP"])
         down = len([m for m in monitors if m.status == "DOWN"])

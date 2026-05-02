@@ -44,6 +44,14 @@ class Settings(BaseSettings):
         # Support case-insensitive env vars
         case_sensitive = False
 
+    from pydantic import model_validator
+
+    @model_validator(mode='after')
+    def fix_database_url(self):
+        if self.database_url and self.database_url.startswith("postgres://"):
+            self.database_url = self.database_url.replace("postgres://", "postgresql://", 1)
+        return self
+
 
 # lru_cache ensures we only read the .env file ONCE.
 # Calling get_settings() 100 times = same object, no re-reading.
