@@ -14,6 +14,7 @@ import IncidentTimeline from './pages/IncidentTimeline';
 import Settings from './pages/Settings';
 import Analytics from './pages/Analytics';
 import SystemFlow from './pages/SystemFlow';
+import InstallLocalAI from './pages/InstallLocalAI';
 
 function App() {
   return (
@@ -89,6 +90,14 @@ function App() {
           <ProtectedRoute>
             <DashboardLayout>
               <SystemFlow />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/install-local-ai" element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <InstallLocalAI />
             </DashboardLayout>
           </ProtectedRoute>
         } />

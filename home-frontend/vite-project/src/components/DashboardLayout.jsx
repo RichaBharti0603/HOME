@@ -11,6 +11,7 @@ const DashboardLayout = ({ children }) => {
     '/control-center': 'Control Center',
     '/incidents': 'Incident Timeline',
     '/assistant': 'AI Assistant',
+    '/install-local-ai': 'Local Private AI',
     '/settings': 'Settings',
     '/analytics': 'Analytics',
     '/system-flow': 'System Flow'

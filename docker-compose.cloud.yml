@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: home_cloud_db
+    environment:
+      POSTGRES_USER: home_user
+      POSTGRES_PASSWORD: home_password
+      POSTGRES_DB: home_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U home_user -d home_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: home_cloud_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./home-cloud-backend
+      dockerfile: Dockerfile
+    container_name: home_cloud_backend
+    environment:
+      - DATABASE_URL=postgresql://home_user:home_password@db:5432/home_db
+      - REDIS_URL=redis://redis:6379/0
+      - APP_ENV=production
+      - JWT_SECRET=super_secret_production_key_change_me
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ./home-cloud-backend
+      dockerfile: Dockerfile
+    container_name: home_cloud_worker
+    command: celery -A app.scheduler.celery_app worker --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://home_user:home_password@db:5432/home_db
+      - REDIS_URL=redis://redis:6379/0
+      - APP_ENV=production
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./home-frontend/vite-project
+      dockerfile: Dockerfile
+    container_name: home_cloud_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
