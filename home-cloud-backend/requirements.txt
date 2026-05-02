@@ -9,3 +9,4 @@ pydantic[email]==2.8.2
 pydantic-settings==2.2.1
 requests==2.31.0
 beautifulsoup4==4.12.3
+apscheduler==3.10.4
