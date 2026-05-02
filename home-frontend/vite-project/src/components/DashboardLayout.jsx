@@ -14,7 +14,8 @@ const DashboardLayout = ({ children }) => {
     '/install-local-ai': 'Local Private AI',
     '/settings': 'Settings',
     '/analytics': 'Analytics',
-    '/system-flow': 'System Flow'
+    '/system-flow': 'System Flow',
+    '/cloud-status': 'Cloud Status'
   };
 
   const title = titleMap[location.pathname] || 'Dashboard';

@@ -15,6 +15,7 @@ import Settings from './pages/Settings';
 import Analytics from './pages/Analytics';
 import SystemFlow from './pages/SystemFlow';
 import InstallLocalAI from './pages/InstallLocalAI';
+import CloudSystemStatus from './pages/CloudSystemStatus';
 
 function App() {
   return (
@@ -90,6 +91,14 @@ function App() {
           <ProtectedRoute>
             <DashboardLayout>
               <SystemFlow />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/cloud-status" element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <CloudSystemStatus />
             </DashboardLayout>
           </ProtectedRoute>
         } />

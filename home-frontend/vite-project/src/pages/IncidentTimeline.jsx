@@ -201,9 +201,24 @@ const IncidentTimeline = () => {
                           : 'Ongoing'}
                       </div>
                     </div>
-                    <button className="hidden md:flex p-3 bg-background border border-border/80 rounded-xl text-muted hover:text-accent-primary hover:bg-indigo-50 transition-all">
-                      <ChevronRight size={20} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={(e) => {
+                           e.stopPropagation();
+                           fetch('http://localhost:9000/chat', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ message: `Analyze incident #${incident.id} for project ${incident.monitor?.project_name || 'System Cluster'}: ${incident.summary}. Known root cause: ${incident.root_cause || 'unknown'}. What actions should I take locally?` })
+                           }).then(() => alert('Incident sent to Local AI. Open Local Control Center (http://localhost:9000) to view analysis.')).catch(() => alert('Failed to contact Local AI. Is it running?'));
+                        }}
+                        className="hidden lg:flex items-center gap-2 p-2.5 px-4 bg-indigo-50 text-indigo-700 font-bold border border-indigo-100 rounded-xl hover:bg-indigo-100 transition-all text-xs whitespace-nowrap"
+                      >
+                        <ShieldCheck size={14} /> Analyze Locally
+                      </button>
+                      <button className="hidden md:flex p-3 bg-background border border-border/80 rounded-xl text-muted hover:text-accent-primary hover:bg-indigo-50 transition-all">
+                        <ChevronRight size={20} />
+                      </button>
+                    </div>
                   </div>
 
                 </div>

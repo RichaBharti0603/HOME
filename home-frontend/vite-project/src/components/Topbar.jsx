@@ -27,6 +27,7 @@ const Topbar = ({ title }) => {
     { label: 'Incidents', path: '/incidents', icon: Zap },
     { label: 'Assistant', path: '/assistant', icon: MessageSquare },
     { label: 'Local AI', path: '/install-local-ai', icon: Cpu },
+    { label: 'Cloud Status', path: '/cloud-status', icon: Server },
     { label: 'System Flow', path: '/system-flow', icon: Workflow },
     { label: 'Analytics', path: '/analytics', icon: BarChart3 },
   ];

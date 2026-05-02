@@ -4,6 +4,7 @@ import json
 import logging
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import httpx
 
@@ -11,6 +12,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("AI-Bridge")
 
 app = FastAPI(title="H.O.M.E Local AI Bridge")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/chat")
 HOST_MOUNT_DIR = os.getenv("HOST_MOUNT_DIR", ".")
@@ -128,46 +137,231 @@ async def reset():
     chat_history = []
     return {"status": "ok"}
 
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "agent": "HOME Local AI", "version": "1.0.0"}
+
+@app.get("/models")
+async def check_models():
+    try:
+        # Check if Ollama has llama3 or phi3
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(OLLAMA_URL.replace("/api/chat", "/api/tags"))
+            if resp.status_code == 200:
+                models = resp.json().get("models", [])
+                return {"status": "ok", "models": [m["name"] for m in models]}
+            return {"status": "error", "detail": "Ollama tags API failed"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
 @app.get("/", response_class=HTMLResponse)
 async def serve_ui():
     return """
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
-        <title>H.O.M.E Local AI Assistant</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>H.O.M.E Local Control Center</title>
         <style>
-            body { font-family: -apple-system, system-ui, sans-serif; background: #0f172a; color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
-            #chat-container { flex: 1; overflow-y: auto; background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #334155; }
-            .message { margin-bottom: 15px; line-height: 1.5; padding: 12px; border-radius: 8px; max-width: 80%; }
-            .user-msg { background: #3b82f6; align-self: flex-end; margin-left: auto; }
-            .ai-msg { background: #334155; margin-right: auto; }
-            .system-msg { background: #052e16; color: #a7f3d0; font-family: monospace; font-size: 0.9em; margin: 5px auto; max-width: 90%; }
-            #input-container { display: flex; gap: 10px; }
-            input { flex: 1; padding: 15px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; font-size: 16px; outline: none; }
-            button { padding: 15px 30px; border-radius: 8px; border: none; background: #3b82f6; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
-            button:hover { background: #2563eb; }
+            :root {
+                --bg: #030712;
+                --surface: #111827;
+                --surface-hover: #1f2937;
+                --border: #374151;
+                --primary: #4f46e5;
+                --primary-hover: #4338ca;
+                --text: #f9fafb;
+                --text-muted: #9ca3af;
+                --success: #10b981;
+            }
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+                background: var(--bg); 
+                color: var(--text); 
+                margin: 0; 
+                height: 100vh; 
+                display: flex;
+                overflow: hidden;
+            }
+            .sidebar {
+                width: 280px;
+                background: var(--surface);
+                border-right: 1px solid var(--border);
+                padding: 20px;
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+            }
+            .main {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                padding: 20px 40px;
+                max-width: 900px;
+                margin: 0 auto;
+                width: 100%;
+            }
+            h1, h2, h3 { margin: 0; font-weight: 600; }
+            .brand {
+                font-size: 20px;
+                font-weight: 800;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding-bottom: 20px;
+                border-bottom: 1px solid var(--border);
+            }
+            .status-card {
+                background: rgba(255,255,255,0.03);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 16px;
+            }
+            .status-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 12px;
+                font-size: 14px;
+            }
+            .badge {
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                font-weight: 600;
+                background: rgba(16, 185, 129, 0.2);
+                color: var(--success);
+            }
+            #chat-container {
+                flex: 1;
+                overflow-y: auto;
+                padding: 20px;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                margin-bottom: 20px;
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+            }
+            .message {
+                padding: 12px 16px;
+                border-radius: 12px;
+                max-width: 85%;
+                line-height: 1.5;
+                font-size: 15px;
+            }
+            .user-msg {
+                background: var(--primary);
+                align-self: flex-end;
+                color: white;
+            }
+            .ai-msg {
+                background: var(--surface-hover);
+                align-self: flex-start;
+                border: 1px solid var(--border);
+            }
+            .system-msg {
+                background: rgba(16, 185, 129, 0.1);
+                border: 1px solid rgba(16, 185, 129, 0.2);
+                color: #34d399;
+                font-family: monospace;
+                font-size: 13px;
+                align-self: center;
+                max-width: 95%;
+            }
+            #input-container {
+                display: flex;
+                gap: 12px;
+            }
+            input {
+                flex: 1;
+                padding: 16px 20px;
+                border-radius: 12px;
+                border: 1px solid var(--border);
+                background: var(--surface);
+                color: white;
+                font-size: 16px;
+                outline: none;
+                transition: border-color 0.2s;
+            }
+            input:focus { border-color: var(--primary); }
+            button {
+                padding: 0 24px;
+                border-radius: 12px;
+                border: none;
+                background: var(--primary);
+                color: white;
+                font-weight: 600;
+                cursor: pointer;
+                transition: background 0.2s;
+                font-size: 16px;
+            }
+            button:hover { background: var(--primary-hover); }
+            .btn-outline {
+                background: transparent;
+                border: 1px solid var(--border);
+                padding: 8px 16px;
+                font-size: 13px;
+                border-radius: 8px;
+            }
+            .btn-outline:hover { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; color: #ef4444; }
+            .btn-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+            .btn-danger:hover { background: rgba(239, 68, 68, 0.3); }
         </style>
     </head>
     <body>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2 style="margin: 0;">H.O.M.E Local Private AI</h2>
-            <button onclick="resetChat()" style="background: #ef4444; padding: 8px 16px;">Reset Context</button>
+        <div class="sidebar">
+            <div class="brand">
+                <div style="width:24px;height:24px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;">H</div>
+                H.O.M.E Local
+            </div>
+            
+            <div class="status-card">
+                <h3 style="font-size:14px;color:var(--text-muted);margin-bottom:8px;">System Status</h3>
+                <div class="status-item"><span>Engine</span><span class="badge">Online</span></div>
+                <div class="status-item"><span>Ollama</span><span class="badge" id="ollama-status">Checking...</span></div>
+                <div class="status-item"><span>File Access</span><span class="badge">Granted</span></div>
+                <div class="status-item"><span>Privacy</span><span class="badge" style="background:rgba(59,130,246,0.2);color:#60a5fa;">Isolated</span></div>
+            </div>
+
+            <div style="margin-top:auto;">
+                <button class="btn-outline btn-danger" style="width:100%;" onclick="resetChat()">Wipe Memory Context</button>
+            </div>
         </div>
-        <div id="chat-container"></div>
-        <div id="input-container">
-            <input type="text" id="user-input" placeholder="Ask your private AI to analyze files or system stats..." onkeypress="if(event.key === 'Enter') sendMessage()">
-            <button onclick="sendMessage()">Send</button>
+
+        <div class="main">
+            <div style="margin-bottom:20px;">
+                <h2 style="font-size:24px;margin-bottom:8px;">Private AI Assistant</h2>
+                <p style="color:var(--text-muted);font-size:15px;margin:0;">Executing inference locally. Ask me to read logs or check CPU usage.</p>
+            </div>
+
+            <div id="chat-container"></div>
+            
+            <div id="input-container">
+                <input type="text" id="user-input" placeholder="Ask your local AI something..." onkeypress="if(event.key === 'Enter') sendMessage()">
+                <button onclick="sendMessage()">Send</button>
+            </div>
         </div>
 
         <script>
             const chatContainer = document.getElementById('chat-container');
             const inputField = document.getElementById('user-input');
 
+            // Initialize formatting
+            function formatMessage(content) {
+                // Convert \n to <br>
+                let html = content.replace(/\\n/g, '<br>');
+                // Simple code block formatting
+                html = html.replace(/```(.*?)```/gs, '<pre style="background:rgba(0,0,0,0.3);padding:10px;border-radius:8px;overflow-x:auto;"><code>$1</code></pre>');
+                return html;
+            }
+
             function appendMessage(role, content) {
                 const div = document.createElement('div');
                 div.className = `message ${role}-msg`;
-                // Basic markdown-like formatting for newlines
-                div.innerHTML = content.replace(/\\n/g, '<br>');
+                div.innerHTML = formatMessage(content);
                 chatContainer.appendChild(div);
                 chatContainer.scrollTop = chatContainer.scrollHeight;
             }
@@ -179,26 +373,66 @@ async def serve_ui():
                 appendMessage('user', text);
                 inputField.value = '';
                 
+                // Show thinking...
+                const thinkingDiv = document.createElement('div');
+                thinkingDiv.className = 'message ai-msg';
+                thinkingDiv.id = 'thinking-indicator';
+                thinkingDiv.innerHTML = '<span style="opacity:0.5;">Analyzing...</span>';
+                chatContainer.appendChild(thinkingDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+
                 try {
                     const response = await fetch('/chat', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ message: text })
                     });
-                    const data = await response.json();
-                    appendMessage('ai', data.response || "No response");
+                    
+                    document.getElementById('thinking-indicator')?.remove();
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        appendMessage('ai', data.response || "No response generated.");
+                    } else {
+                        throw new Error('API Error');
+                    }
                 } catch (err) {
-                    appendMessage('system', 'Error connecting to Local AI: ' + err.message);
+                    document.getElementById('thinking-indicator')?.remove();
+                    appendMessage('system', 'Connection failed. Ensure Ollama is running and model is pulled.');
                 }
             }
 
             async function resetChat() {
-                await fetch('/reset', { method: 'POST' });
-                chatContainer.innerHTML = '';
-                appendMessage('system', 'Context cleared. Memory reset.');
+                try {
+                    await fetch('/reset', { method: 'POST' });
+                    chatContainer.innerHTML = '';
+                    appendMessage('system', 'Context successfully wiped.');
+                } catch (e) {
+                    alert('Error resetting chat');
+                }
             }
             
-            appendMessage('system', 'Welcome to your private H.O.M.E AI. Connected to Local Ollama engine.');
+            // Initial checks
+            async function checkSystem() {
+                try {
+                    const res = await fetch('/models');
+                    const data = await res.json();
+                    if(data.status === 'ok' && data.models.length > 0) {
+                        document.getElementById('ollama-status').innerText = 'Ready';
+                    } else {
+                        document.getElementById('ollama-status').innerText = 'No Models';
+                        document.getElementById('ollama-status').style.color = '#f59e0b';
+                        document.getElementById('ollama-status').style.background = 'rgba(245, 158, 11, 0.2)';
+                    }
+                } catch (e) {
+                    document.getElementById('ollama-status').innerText = 'Disconnected';
+                    document.getElementById('ollama-status').style.color = '#ef4444';
+                    document.getElementById('ollama-status').style.background = 'rgba(239, 68, 68, 0.2)';
+                }
+            }
+            
+            checkSystem();
+            appendMessage('system', 'Local inference engine initialized. Mount path: Active.');
         </script>
     </body>
     </html>
