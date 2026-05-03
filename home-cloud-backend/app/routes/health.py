@@ -3,7 +3,7 @@ from sqlalchemy import text
 from app.worker.celery_app import celery_app
 from app.config import get_settings
 from app.database import engine
-from app.main import RedisHealthGuard
+from app.core.system_guard import RedisHealthGuard
 import redis
 
 router = APIRouter(prefix="/system", tags=["Health"])
