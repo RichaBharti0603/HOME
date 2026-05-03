@@ -9,11 +9,13 @@ import app.models.user
 import app.models.monitor
 import app.models.log
 import app.models.alert
+import app.models.tenant
+import app.models.billing
 from sqlalchemy import text
 import redis
 
 # Routers
-from app.routes import auth, monitor as monitor_route, alert, ai
+from app.routes import auth, monitor as monitor_route, alert, ai, health, billing
 
 # ============================================
 # Logging
@@ -31,6 +33,26 @@ settings = get_settings()
 
 
 # ============================================
+# Redis Health Guard
+# ============================================
+class RedisHealthGuard:
+    is_available = False
+
+    @classmethod
+    def ping_and_verify(cls):
+        try:
+            r = redis.Redis.from_url(settings.celery_broker_url, socket_connect_timeout=3)
+            if r.ping():
+                cls.is_available = True
+                logger.info(f"RedisHealthGuard: Connected to {settings.celery_broker_url}")
+            else:
+                logger.warning("RedisHealthGuard: Ping returned False")
+        except Exception as e:
+            cls.is_available = False
+            logger.error(f"RedisHealthGuard: Connection failed - {e}")
+            logger.error("WARNING: Running without Redis. Celery tasks will fallback or queue indefinitely.")
+
+# ============================================
 # Lifespan
 # ============================================
 @asynccontextmanager
@@ -46,11 +68,14 @@ async def lifespan(app: FastAPI):
         logger.error("The application will continue starting, but database operations will fail.")
 
     try:
+        # Check Redis Health
+        RedisHealthGuard.ping_and_verify()
+        
         # Start Scheduler
         start_scheduler()
         logger.info("Scheduler started successfully")
     except Exception as e:
-        logger.error(f"Failed to start the scheduler (likely Redis connection issue): {e}")
+        logger.error(f"Failed to start the scheduler: {e}")
         logger.error("The application will continue starting, but scheduled tasks will not run.")
 
     yield
@@ -88,6 +113,8 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(monitor_route.router)
 app.include_router(alert.router)
+app.include_router(health.router)
+app.include_router(billing.router)
 from fastapi import WebSocket, WebSocketDisconnect
 from app.utils.websocket_manager import manager
 
@@ -127,12 +154,8 @@ async def health_check():
         health_status["status"] = "degraded"
         
     # Check Redis
-    try:
-        r = redis.Redis.from_url(settings.redis_url, socket_connect_timeout=2)
-        r.ping()
-        health_status["redis"] = "connected"
-    except Exception as e:
-        health_status["redis"] = f"disconnected: {str(e)}"
+    health_status["redis"] = "connected" if RedisHealthGuard.is_available else "disconnected"
+    if not RedisHealthGuard.is_available:
         health_status["status"] = "degraded"
         
     return health_status

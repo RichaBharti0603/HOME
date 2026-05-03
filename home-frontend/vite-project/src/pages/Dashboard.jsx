@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const Dashboard = () => {
   const [monitors, setMonitors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState([]);
   
   // Embedded Assistant State
   const [aiInput, setAiInput] = useState('');
@@ -37,9 +38,25 @@ const Dashboard = () => {
       }
       const response = await api.get('/monitors');
       setMonitors(response.data);
+      
+      try {
+        const logsRes = await api.get('/monitors/all/logs?limit=30');
+        const logs = logsRes.data.reverse();
+        const cData = logs.map(l => ({
+          time: new Date(l.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+          latency: l.response_time || 0
+        }));
+        setChartData(cData.length ? cData : [
+          { time: '10:00', latency: 0 }, { time: '10:05', latency: 0 }
+        ]);
+      } catch (err) {
+        console.error('Failed to fetch logs', err);
+      }
+      
       setLoading(false);
     } catch (err) {
       console.error('Failed to fetch monitors', err);
+      setLoading(false);
     }
   };
 
@@ -78,10 +95,7 @@ const Dashboard = () => {
     avgLatency: monitors.length ? Math.round(monitors.reduce((acc, m) => acc + (m.last_response_time || 0), 0) / monitors.length) : 0
   };
 
-  const chartData = [
-    { time: '10:00', latency: 45 }, { time: '10:05', latency: 52 }, { time: '10:10', latency: 78 },
-    { time: '10:15', latency: 61 }, { time: '10:20', latency: 55 }, { time: '10:25', latency: 42 }, { time: '10:30', latency: 49 },
-  ];
+
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">

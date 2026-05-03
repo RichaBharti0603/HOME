@@ -13,11 +13,14 @@ class MonitorBase(BaseModel):
     active_status: Optional[bool] = True
     expected_status: Optional[int] = None
     expected_keyword: Optional[str] = None
-    tenant_id: Optional[str] = None
+    tenant_id: Optional[int] = None
     threshold_ms: Optional[int] = 2000
 
 class MonitorCreate(MonitorBase):
     pass
+
+class URLValidateRequest(BaseModel):
+    url: str
 
 
 class IncidentResponse(BaseModel):

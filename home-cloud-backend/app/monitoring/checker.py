@@ -297,6 +297,30 @@ def check_http(url: str, expected_status: Optional[int] = None, expected_keyword
             # If we got here without SSLError, cert is valid
             is_ssl = url.lower().startswith("https://")
             
+            # Extract SSL info if HTTPS
+            ssl_issuer = None
+            ssl_days_remaining = None
+            if is_ssl:
+                try:
+                    hostname = urlparse(url).hostname
+                    context = ssl.create_default_context()
+                    with socket.create_connection((hostname, 443), timeout=5) as sock:
+                        with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+                            cert = ssock.getpeercert()
+                            if cert:
+                                issuer = dict(x[0] for x in cert.get('issuer', []))
+                                ssl_issuer = issuer.get('organizationName') or issuer.get('commonName') or "Unknown"
+                                import datetime
+                                not_after = cert.get('notAfter')
+                                if not_after:
+                                    expiry_date = datetime.datetime.strptime(not_after, '%b %d %H:%M:%S %Y %Z')
+                                    ssl_days_remaining = (expiry_date - datetime.datetime.utcnow()).days
+                except Exception:
+                    pass
+
+            # TTFB Approximation
+            ttfb_ms = round(response.elapsed.total_seconds() * 1000, 2)
+            
             # Determine success based on status code
             if expected_status:
                 success = response.status_code == expected_status
@@ -334,6 +358,9 @@ def check_http(url: str, expected_status: Optional[int] = None, expected_keyword
                 final_url=response.url,
                 content_length=len(response.content),
                 is_ssl_valid=True if is_ssl else None,  # None = not applicable
+                ssl_issuer=ssl_issuer,
+                ssl_days_remaining=ssl_days_remaining,
+                ttfb_ms=ttfb_ms,
                 error=error_msg,
                 content_matched=content_matched,
                 expected_status_matched=expected_status_matched,
@@ -558,3 +585,63 @@ class MonitoringEngine:
         )
 
         return result
+
+    @classmethod
+    def get_url_metadata(cls, url: str) -> dict:
+        """
+        Lightweight sync check to extract DNS, HTTP headers, and SSL info.
+        Used by the Control Panel wizard for real-time validation.
+        """
+        try:
+            hostname, scheme, port = cls._parse_url(url)
+        except Exception as e:
+            return {"error": f"Invalid URL: {e}"}
+
+        if not hostname:
+            return {"error": "Could not extract hostname"}
+
+        metadata = {
+            "hostname": hostname,
+            "ip_address": None,
+            "server": None,
+            "ssl_issuer": None,
+            "ssl_expiry_days": None,
+            "error": None
+        }
+
+        # 1. DNS Resolution
+        dns_res = check_dns(hostname)
+        if dns_res.success and dns_res.resolved_ips:
+            metadata["ip_address"] = dns_res.resolved_ips[0]
+
+        # 2. HTTP Headers (Server, Title etc.)
+        try:
+            response = requests.get(url, headers=REQUEST_HEADERS, timeout=5, allow_redirects=True)
+            metadata["server"] = response.headers.get("Server", "Unknown")
+        except Exception as e:
+            logger.warning(f"HTTP metadata fetch failed: {e}")
+
+        # 3. SSL Extraction
+        if scheme == "https":
+            try:
+                context = ssl.create_default_context()
+                with socket.create_connection((hostname, port), timeout=5) as sock:
+                    with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+                        cert = ssock.getpeercert()
+                        if cert:
+                            # Extract issuer
+                            issuer = dict(x[0] for x in cert.get('issuer', []))
+                            metadata["ssl_issuer"] = issuer.get('organizationName') or issuer.get('commonName') or "Unknown"
+                            
+                            # Extract expiry
+                            not_after = cert.get('notAfter')
+                            if not_after:
+                                # Example: 'Oct 23 12:00:00 2024 GMT'
+                                import datetime
+                                expiry_date = datetime.datetime.strptime(not_after, '%b %d %H:%M:%S %Y %Z')
+                                days_remaining = (expiry_date - datetime.datetime.utcnow()).days
+                                metadata["ssl_expiry_days"] = days_remaining
+            except Exception as e:
+                logger.warning(f"SSL metadata extraction failed: {e}")
+
+        return metadata

@@ -15,7 +15,9 @@ const DashboardLayout = ({ children }) => {
     '/settings': 'Settings',
     '/analytics': 'Analytics',
     '/system-flow': 'System Flow',
-    '/cloud-status': 'Cloud Status'
+    '/cloud-status': 'Cloud Status',
+    '/queue-health': 'Queue Health',
+    '/alert-center': 'Alert Center'
   };
 
   const title = titleMap[location.pathname] || 'Dashboard';

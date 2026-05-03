@@ -24,10 +24,12 @@ const Topbar = ({ title }) => {
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: Activity },
     { label: 'Control Center', path: '/control-center', icon: ShieldCheck },
+    { label: 'Alerts', path: '/alert-center', icon: Bell },
     { label: 'Incidents', path: '/incidents', icon: Zap },
     { label: 'Assistant', path: '/assistant', icon: MessageSquare },
     { label: 'Local AI', path: '/install-local-ai', icon: Cpu },
     { label: 'Cloud Status', path: '/cloud-status', icon: Server },
+    { label: 'Queue', path: '/queue-health', icon: Activity },
     { label: 'System Flow', path: '/system-flow', icon: Workflow },
     { label: 'Analytics', path: '/analytics', icon: BarChart3 },
   ];

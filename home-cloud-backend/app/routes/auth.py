@@ -5,7 +5,7 @@ from datetime import timedelta
 from app.database import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
-from app.utils.security import get_password_hash, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
+from app.utils.security import get_password_hash, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_current_user
 
 router = APIRouter(tags=["Authentication"])
 
@@ -45,3 +45,15 @@ def login(user_in: UserLogin, db: Session = Depends(get_db)):
         data={"email": user.email}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.get("/users/me")
+def get_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    tenant = current_user.tenant
+    return {
+        "id": current_user.id,
+        "email": current_user.email,
+        "tenant_id": current_user.tenant_id,
+        "onboarding_complete": tenant.onboarding_complete if tenant else False,
+        "subscription_plan": tenant.subscription_plan if tenant else "none",
+        "payment_status": tenant.payment_status if tenant else "none"
+    }

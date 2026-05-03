@@ -18,8 +18,8 @@ def create_celery_app() -> Celery:
     """
     celery_app = Celery(
         "home",                          # App name (shows in logs)
-        broker=settings.redis_url,       # Tasks go INTO Redis
-        backend=settings.redis_url,      # Results come OUT of Redis
+        broker=settings.celery_broker_url,       # Tasks go INTO Redis
+        backend=settings.celery_result_backend,  # Results come OUT of Redis
     )
 
     celery_app.conf.update(
@@ -48,6 +48,14 @@ def create_celery_app() -> Celery:
                                          # Prevents one slow task from starving others
         task_acks_late=True,             # Acknowledge task AFTER completion
                                          # If worker crashes mid-task, task re-queues
+
+        # Queue routing
+        task_routes={
+            'app.worker.tasks.check_single_monitor': {'queue': 'health_checks'},
+            'app.worker.tasks.run_all_monitors': {'queue': 'health_checks'},
+            # Alerts and AI tasks to be assigned queues when implemented
+        },
+        task_default_queue='health_checks',
     )
 
     return celery_app

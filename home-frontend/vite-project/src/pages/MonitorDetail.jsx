@@ -4,7 +4,7 @@ import {
   Activity, Clock, Globe, Zap, 
   ArrowLeft, ExternalLink, RefreshCw, 
   ShieldCheck, AlertTriangle, BarChart3,
-  History, Calendar, Network, ShieldAlert, KeyRound, Cpu
+  History, Calendar, Network, ShieldAlert, KeyRound, Cpu, Lock, CalendarDays
 } from 'lucide-react';
 import api from '../utils/api';
 import { format } from 'date-fns';
@@ -97,6 +97,8 @@ const MonitorDetail = () => {
   const avgDns = Math.round(logs.reduce((acc, l) => acc + (l.dns_ms || 0), 0) / (logs.filter(l => l.dns_ms).length || 1));
   const avgTcp = Math.round(logs.reduce((acc, l) => acc + (l.tcp_ms || 0), 0) / (logs.filter(l => l.tcp_ms).length || 1));
   const avgHttp = Math.round(logs.reduce((acc, l) => acc + (l.http_ms || 0), 0) / (logs.filter(l => l.http_ms).length || 1));
+  
+  const latestLog = logs[0] || {};
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto py-4">
@@ -147,6 +149,10 @@ const MonitorDetail = () => {
                  { label: 'Check Interval', val: monitor.frequency || '1m', icon: Clock, color: 'text-gray-500 bg-gray-50' },
                  { label: 'Expected Status', val: `HTTP ${monitor.expected_status || 200}`, icon: KeyRound, color: 'text-amber-500 bg-amber-50' },
                  { label: 'Retry Policy', val: `${monitor.retry_policy?.max_retries || 3} Attempts`, icon: ShieldAlert, color: 'text-purple-500 bg-purple-50' },
+                 ...(latestLog?.ssl_issuer ? [
+                   { label: 'SSL Issuer', val: latestLog.ssl_issuer, icon: Lock, color: 'text-teal-500 bg-teal-50' },
+                   { label: 'SSL Expiry', val: `${latestLog.ssl_days_remaining} Days`, icon: CalendarDays, color: 'text-teal-500 bg-teal-50' }
+                 ] : []),
                ].map((stat, i) => (
                  <div key={i} className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-gray-200/60 bg-white shadow-sm">
                     <div className={`p-1 rounded-md ${stat.color}`}>

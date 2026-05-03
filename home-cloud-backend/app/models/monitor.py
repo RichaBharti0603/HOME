@@ -7,7 +7,7 @@ class Monitor(Base):
     __tablename__ = "monitors"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(String, nullable=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True) 
     project_name = Column(String, nullable=False)
     url = Column(String, nullable=False)
@@ -29,6 +29,7 @@ class Monitor(Base):
     threshold_ms = Column(Integer, default=2000) # threshold for SLOW alerts
 
     # Relationships
+    tenant = relationship("Tenant", back_populates="monitors")
     incidents = relationship("Incident", back_populates="monitor", cascade="all, delete-orphan")
     logs = relationship("MonitorLog", backref="monitor_ref", cascade="all, delete-orphan")
 

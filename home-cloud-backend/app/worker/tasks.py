@@ -70,7 +70,12 @@ def check_single_monitor(self, monitor_id: int):
             error_message=classification["explanation"],
             dns_ms=int(result.dns.duration_ms) if result.dns else None,
             tcp_ms=int(result.tcp.duration_ms) if result.tcp else None,
-            http_ms=int(result.http.response_time_ms) if result.http else None
+            http_ms=int(result.http.response_time_ms) if result.http else None,
+            ssl_issuer=result.http.ssl_issuer if result.http else None,
+            ssl_days_remaining=result.http.ssl_days_remaining if result.http else None,
+            tls_handshake_ms=int(result.http.tls_handshake_ms) if result.http else None,
+            ttfb_ms=int(result.http.ttfb_ms) if result.http else None,
+            redirects=result.http.redirects if result.http else None
         )
         db.add(log)
 
@@ -79,34 +84,40 @@ def check_single_monitor(self, monitor_id: int):
         alert_engine = AlertPolicyEngine(db)
 
         # Incident Logic
-        if status == "DOWN" and prev_status != "DOWN":
-            # Check consecutive failures
+        if status == "DOWN" or status == "DEGRADED":
+            # Count consecutive downs or degraded
             recent_logs = db.query(MonitorLog).filter(
                 MonitorLog.monitor_id == monitor.id
-            ).order_by(MonitorLog.timestamp.desc()).limit(max_retries - 1).all()
+            ).order_by(MonitorLog.timestamp.desc()).limit(max_retries).all()
             
-            consecutive_down = 1 + sum(1 for l in recent_logs if l.status == "DOWN")
+            consecutive_failures = sum(1 for l in recent_logs if l.status in ["DOWN", "DEGRADED"])
             
-            if consecutive_down >= max_retries:
-                # Real failure
-                incident = Incident(
-                    monitor_id=monitor.id,
-                    status="OPEN",
-                    severity=classification["severity"],
-                    summary=f"Monitor {monitor.project_name} is DOWN: {classification['type']}",
-                    root_cause=classification["explanation"]
-                )
-                db.add(incident)
+            if consecutive_failures >= max_retries:
+                # Check if there is already an open incident
+                open_incident = db.query(Incident).filter(
+                    Incident.monitor_id == monitor.id,
+                    Incident.status == "OPEN"
+                ).first()
                 
-                # Send alert via Policy Engine
-                msg = f"CRITICAL: {monitor.project_name} is down. {classification['explanation']}"
-                alert_engine.process_incident(monitor, incident, "DOWN", msg)
+                if not open_incident:
+                    # Real failure crossed the threshold
+                    incident = Incident(
+                        monitor_id=monitor.id,
+                        status="OPEN",
+                        severity=classification["severity"],
+                        summary=f"Monitor {monitor.project_name} is {status}: {classification['type']}",
+                        root_cause=classification["explanation"]
+                    )
+                    db.add(incident)
+                    
+                    # Send alert via Policy Engine
+                    msg = f"{classification['severity'].upper()}: {monitor.project_name} is {status}. {classification['explanation']}"
+                    alert_engine.process_incident(monitor, incident, status, msg)
             else:
-                logger.info(f"Monitor {monitor.id} failed ({consecutive_down}/{max_retries}). Retrying before alert.")
-                # We can keep it DOWN or WARNING. The code below commits it as DOWN.
-                # It's fine to mark it as DOWN in status but not alert.
+                if prev_status == "UP":
+                    logger.info(f"Monitor {monitor.id} failed ({consecutive_failures}/{max_retries}). Retrying before alert.")
 
-        elif status == "UP" and prev_status == "DOWN":
+        elif status == "UP" and prev_status in ["DOWN", "DEGRADED"]:
             # Resolve incident
             open_incident = db.query(Incident).filter(
                 Incident.monitor_id == monitor.id,
@@ -118,14 +129,8 @@ def check_single_monitor(self, monitor_id: int):
                 open_incident.resolved_at = datetime.utcnow()
             
                 # Recovery alert
-                msg = f"RECOVERY: {monitor.project_name} is back online."
+                msg = f"RECOVERY: {monitor.project_name} is back online and healthy."
                 alert_engine.process_incident(monitor, open_incident, "RECOVERY", msg)
-
-        elif status == "DEGRADED":
-            # Optional: alert on degraded if severity is high
-            if classification["severity"] == "HIGH":
-                msg = f"DEGRADED: {monitor.project_name} is degraded. {classification['explanation']}"
-                alert_engine.process_incident(monitor, None, "DEGRADED", msg)
 
         db.commit()
         

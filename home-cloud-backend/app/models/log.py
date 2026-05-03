@@ -16,3 +16,10 @@ class MonitorLog(Base):
     dns_ms = Column(Integer, nullable=True)
     tcp_ms = Column(Integer, nullable=True)
     http_ms = Column(Integer, nullable=True)
+    
+    # Extended metrics
+    ssl_issuer = Column(String, nullable=True)
+    ssl_days_remaining = Column(Integer, nullable=True)
+    tls_handshake_ms = Column(Integer, nullable=True)
+    ttfb_ms = Column(Integer, nullable=True)
+    redirects = Column(Integer, nullable=True)

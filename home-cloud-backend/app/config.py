@@ -18,6 +18,8 @@ class Settings(BaseSettings):
 
     # Redis — Celery uses this as its message broker
     redis_url: str = "redis://localhost:6379/0"
+    celery_broker_url: str = "redis://localhost:6379/0"
+    celery_result_backend: str = "redis://localhost:6379/0"
 
     # AI Service URL (Local Ollama via Ngrok)
     ai_service_url: str = ""
@@ -34,6 +36,11 @@ class Settings(BaseSettings):
     smtp_user: str = ""
     smtp_password: str = ""
     alert_from_email: str = ""
+
+    # Stripe Settings
+    stripe_publishable_key: str = ""
+    stripe_secret_key: str = ""
+    stripe_webhook_secret: str = ""
 
     class Config:
         # Tell Pydantic to read from .env file

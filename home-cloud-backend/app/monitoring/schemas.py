@@ -80,7 +80,10 @@ class HTTPResult:
     # A site can return 200 OK but have an expired SSL cert.
     # That's a failure that HTTP status code alone won't catch.
     is_ssl_valid: Optional[bool] = None
-
+    ssl_issuer: Optional[str] = None
+    ssl_days_remaining: Optional[int] = None
+    tls_handshake_ms: float = 0.0
+    ttfb_ms: float = 0.0
 
 @dataclass
 class CheckResult:
@@ -146,6 +149,10 @@ class CheckResult:
                 "content_length": self.http.content_length,
                 "error": self.http.error,
                 "is_ssl_valid": self.http.is_ssl_valid,
+                "ssl_issuer": self.http.ssl_issuer,
+                "ssl_days_remaining": self.http.ssl_days_remaining,
+                "tls_handshake_ms": self.http.tls_handshake_ms,
+                "ttfb_ms": self.http.ttfb_ms,
                 "content_matched": self.http.content_matched,
                 "expected_status_matched": self.http.expected_status_matched,
             } if self.http else None,

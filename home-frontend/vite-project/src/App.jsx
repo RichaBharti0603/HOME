@@ -16,6 +16,10 @@ import Analytics from './pages/Analytics';
 import SystemFlow from './pages/SystemFlow';
 import InstallLocalAI from './pages/InstallLocalAI';
 import CloudSystemStatus from './pages/CloudSystemStatus';
+import QueueHealth from './pages/QueueHealth';
+import AlertCenter from './pages/AlertCenter';
+import OnboardingWizard from './pages/OnboardingWizard';
+import PaymentSuccess from './pages/PaymentSuccess';
 
 function App() {
   return (
@@ -37,7 +41,13 @@ function App() {
           </ProtectedRoute>
         } />
         
-        <Route path="/setup" element={<Navigate to="/control-center" />} />
+        <Route path="/setup" element={
+          <ProtectedRoute>
+            <OnboardingWizard />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/payment-success" element={<PaymentSuccess />} />
         
         <Route path="/control-center" element={
           <ProtectedRoute>
@@ -99,6 +109,22 @@ function App() {
           <ProtectedRoute>
             <DashboardLayout>
               <CloudSystemStatus />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/queue-health" element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <QueueHealth />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/alert-center" element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <AlertCenter />
             </DashboardLayout>
           </ProtectedRoute>
         } />
