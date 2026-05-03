@@ -7,6 +7,12 @@ const Topbar = ({ title }) => {
   const [localAIOffline, setLocalAIOffline] = useState(true);
   
   useEffect(() => {
+    // Only check local AI if the user is explicitly on the local AI page
+    // or has explicitly enabled it. This prevents cross-origin errors in production.
+    if (location.pathname !== '/install-local-ai' && localStorage.getItem('local_ai_enabled') !== 'true') {
+        return;
+    }
+
     const checkLocalAI = async () => {
       try {
         const res = await fetch('http://localhost:9000/health');
@@ -19,7 +25,7 @@ const Topbar = ({ title }) => {
     checkLocalAI();
     const interval = setInterval(checkLocalAI, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [location.pathname]);
   
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: Activity },
