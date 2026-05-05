@@ -23,14 +23,21 @@ const Register = () => {
     setLoading(true);
     setError('');
     try {
-      await api.post('/register', {
+      console.log("Attempting to register with:", formData.email);
+      const response = await api.post('/register', {
         email: formData.email,
         password: formData.password
       });
-      alert('Account created successfully');
-      navigate('/login');
+      console.log("Registration successful:", response.data);
+      // Immediate redirect without blocking alert
+      navigate('/login', { state: { message: 'Account created successfully! Please log in.' } });
     } catch (err) {
-      setError('Registration failed. Email may already be registered.');
+      console.error("Registration error:", err);
+      if (!err.response) {
+        setError('Network Error: Cannot reach the server. Please check your internet connection or VITE_API_URL.');
+      } else {
+        setError(err.response.data?.detail || 'Registration failed. Email may already be registered.');
+      }
     } finally {
       setLoading(false);
     }

@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, Shield, Activity, Zap } from 'lucide-react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { Mail, Lock, Shield, Activity, Zap, CheckCircle2 } from 'lucide-react';
 import api from '../utils/api';
 
 const Login = () => {
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState(location.state?.message || '');
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -86,6 +88,13 @@ const Login = () => {
                 />
               </div>
             </div>
+
+            {successMsg && (
+              <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-600 text-sm font-medium animate-in fade-in flex items-center gap-2">
+                <CheckCircle2 size={16} />
+                {successMsg}
+              </div>
+            )}
 
             {error && (
               <div className="p-3 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-medium animate-in fade-in">
