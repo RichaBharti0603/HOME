@@ -78,27 +78,45 @@ app = FastAPI(
     docs_url="/docs" if settings.debug else None,
 )
 
-# Phase 5: Logging Middleware
-import time
-@app.middleware("http")
-async def log_requests(request, call_next):
-    start_time = time.time()
-    logger.info(f"Incoming: {request.method} {request.url}")
-    response = await call_next(request)
-    duration = time.time() - start_time
-    logger.info(f"Request {request.url} took {duration:.4f}s")
-    return response
+# ============================================
+# CORS Configuration
+# ============================================
+# Production Origin: https://home-frontend-fjvl.onrender.com
+# Development Origins: localhost:3000, localhost:5173
+origins = [
+    "https://home-frontend-fjvl.onrender.com",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+]
 
-# ============================================
-# CORS
-# ============================================
+# If in development mode, we can be more permissive if needed
+if settings.app_env != "production":
+    logger.info("Development mode: Allowing extra origins for testing")
+    # You could add more here if needed
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins if settings.app_env == "production" else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Phase 5: Logging Middleware (including Origin tracking)
+import time
+@app.middleware("http")
+async def log_requests(request, call_next):
+    start_time = time.time()
+    origin = request.headers.get("origin")
+    logger.info(f"Incoming: {request.method} {request.url} | Origin: {origin}")
+    
+    response = await call_next(request)
+    
+    duration = time.time() - start_time
+    logger.info(f"Request {request.url} took {duration:.4f}s | Status: {response.status_code}")
+    return response
 
 
 # ============================================
