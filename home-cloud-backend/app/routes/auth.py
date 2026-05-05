@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from loguru import logger
 from sqlalchemy.orm import Session
 from datetime import timedelta
 
@@ -10,8 +11,12 @@ from app.utils.security import get_password_hash, verify_password, create_access
 
 router = APIRouter(tags=["Authentication"])
 
+from fastapi.concurrency import run_in_threadpool
+import time
+
 @router.post("/register", response_model=UserResponse)
-def register(user_in: UserCreate, db: Session = Depends(get_db)):
+async def register(user_in: UserCreate, db: Session = Depends(get_db)):
+    start_time = time.time()
     # Check if user exists
     user = db.query(User).filter(User.email == user_in.email).first()
     if user:
@@ -20,8 +25,10 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
             detail="The user with this email already exists in the system."
         )
     
+    # Phase 1: Non-blocking password hashing
+    hashed_password = await run_in_threadpool(get_password_hash, user_in.password)
+    
     # Create new user
-    hashed_password = get_password_hash(user_in.password)
     db_user = User(
         email=user_in.email,
         password=hashed_password,
@@ -30,7 +37,7 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_user)
 
-    # Provision a tenant for each new account so onboarding and billing work.
+    # Phase 1: Keep tenant creation simple and fast
     tenant = Tenant(
         owner_user_id=db_user.id,
         company_name=user_in.email.split("@")[0],
@@ -45,12 +52,24 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     db_user.tenant_id = tenant.id
     db.commit()
     db.refresh(db_user)
+    
+    logger.info(f"/register took {time.time() - start_time:.4f}s")
     return db_user
 
 @router.post("/login", response_model=Token)
-def login(user_in: UserLogin, db: Session = Depends(get_db)):
+async def login(user_in: UserLogin, db: Session = Depends(get_db)):
+    start_time = time.time()
     user = db.query(User).filter(User.email == user_in.email).first()
-    if not user or not verify_password(user_in.password, user.password):
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Phase 1: Non-blocking password verification
+    is_valid = await run_in_threadpool(verify_password, user_in.password, user.password)
+    if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -59,8 +78,10 @@ def login(user_in: UserLogin, db: Session = Depends(get_db)):
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"email": user.email}, expires_delta=access_token_expires
+        data={"sub": user.email}, expires_delta=access_token_expires
     )
+    
+    logger.info(f"/login took {time.time() - start_time:.4f}s")
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/users/me")

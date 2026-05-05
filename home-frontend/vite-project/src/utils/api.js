@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000',
-  timeout: 10000, // 10 seconds
+  timeout: 30000, // 30 seconds to handle cold starts
   headers: {
     'Content-Type': 'application/json',
   },
@@ -19,5 +19,17 @@ api.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
+
+export const requestWithRetry = async (fn, retries = 2) => {
+  try {
+    return await fn();
+  } catch (err) {
+    if (retries > 0 && (!err.response || err.response.status >= 500)) {
+      console.log(`Retrying request... (${retries} left)`);
+      return requestWithRetry(fn, retries - 1);
+    }
+    throw err;
+  }
+};
 
 export default api;

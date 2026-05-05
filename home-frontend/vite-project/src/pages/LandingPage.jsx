@@ -1,11 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { motion } from 'framer-motion';
+import api from '../utils/api';
 
 const LandingPage = () => {
   const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState(0);
+
+  useEffect(() => {
+    // Phase 4: Warm-up backend to handle cold starts on Render free tier
+    const warmup = async () => {
+      try {
+        console.log("Warming up backend...");
+        await api.get('/health');
+      } catch (err) {
+        console.warn("Warmup failed (expected if backend cold starting):", err);
+      }
+    };
+    warmup();
+  }, []);
 
   const features = [
     {

@@ -43,23 +43,25 @@ async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.app_name}...")
     
     try:
-        # Ensure database tables are created (useful for SQLite fast prototyping)
+        # Ensure database tables are created
         Base.metadata.create_all(bind=engine)
         logger.info("Database migration check completed successfully")
     except Exception as e:
-        logger.error(f"Failed to connect to or migrate the database: {e}")
-        logger.error("The application will continue starting, but database operations will fail.")
+        logger.error(f"Failed to database operations: {e}")
 
     try:
         # Check Redis Health
         RedisHealthGuard.ping_and_verify()
         
-        # Start Scheduler
-        start_scheduler()
-        logger.info("Scheduler started successfully")
+        # Phase 2: Conditional Scheduler
+        import os
+        if os.getenv("ENABLE_SCHEDULER") == "true":
+            start_scheduler()
+            logger.info("Scheduler started successfully")
+        else:
+            logger.warning("Scheduler DISABLED via ENABLE_SCHEDULER env var")
     except Exception as e:
         logger.error(f"Failed to start the scheduler: {e}")
-        logger.error("The application will continue starting, but scheduled tasks will not run.")
 
     yield
 
@@ -74,16 +76,25 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
     docs_url="/docs" if settings.debug else None,
-    redoc_url="/redoc" if settings.debug else None,
 )
 
+# Phase 5: Logging Middleware
+import time
+@app.middleware("http")
+async def log_requests(request, call_next):
+    start_time = time.time()
+    logger.info(f"Incoming: {request.method} {request.url}")
+    response = await call_next(request)
+    duration = time.time() - start_time
+    logger.info(f"Request {request.url} took {duration:.4f}s")
+    return response
 
 # ============================================
 # CORS
 # ============================================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # For production robustness, though you should ideally restrict this
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -104,45 +115,13 @@ from app.utils.websocket_manager import manager
 
 app.include_router(ai.router)
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket, monitor_id: str = None):
-    await manager.connect(websocket, monitor_id)
-    try:
-        while True:
-            # Keep connection alive
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        manager.disconnect(websocket, monitor_id)
-
-
 # ============================================
 # Endpoints
 # ============================================
 @app.get("/health", tags=["System"])
 async def health_check():
-    health_status = {
-        "status": "healthy",
-        "app": settings.app_name,
-        "environment": settings.app_env,
-        "database": "unknown",
-        "redis": "unknown"
-    }
-    
-    # Check Database
-    try:
-        with engine.connect() as connection:
-            connection.execute(text("SELECT 1"))
-        health_status["database"] = "connected"
-    except Exception as e:
-        health_status["database"] = f"disconnected: {str(e)}"
-        health_status["status"] = "degraded"
-        
-    # Check Redis
-    health_status["redis"] = "connected" if RedisHealthGuard.is_available else "disconnected"
-    if not RedisHealthGuard.is_available:
-        health_status["status"] = "degraded"
-        
-    return health_status
+    # Phase 1: Minimal Health Check to avoid cold-start delays
+    return {"status": "ok", "app": settings.app_name}
 
 
 @app.get("/", tags=["System"])
