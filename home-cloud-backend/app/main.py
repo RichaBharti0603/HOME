@@ -79,18 +79,11 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# ============================================
-# CORS Configuration (STRICT)
-# ============================================
-origins = [
-    "https://home-frontend-fjvl.onrender.com",
-    "http://localhost:5173", # Keep for local dev ease if needed, but primary is the render one
-    "http://localhost:3000",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=[
+        "https://home-frontend-fjvl.onrender.com"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
