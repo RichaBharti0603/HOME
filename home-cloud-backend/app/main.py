@@ -16,7 +16,7 @@ import redis
 from app.core.system_guard import RedisHealthGuard
 
 # Routers
-from app.routes import auth, monitor as monitor_route, alert, ai, health, billing
+from app.routes import auth, monitor as monitor_route, alert, ai, health, billing, engine as engine_route
 
 # ============================================
 # Logging
@@ -98,6 +98,7 @@ app.include_router(monitor_route.router)
 app.include_router(alert.router)
 app.include_router(health.router)
 app.include_router(billing.router)
+app.include_router(engine_route.router)
 from fastapi import WebSocket, WebSocketDisconnect
 from app.utils.websocket_manager import manager
 

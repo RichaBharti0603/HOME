@@ -31,6 +31,7 @@ const Topbar = ({ title }) => {
     { label: 'Assistant', path: '/assistant', icon: MessageSquare },
     { label: 'Local AI', path: '/install-local-ai', icon: Cpu },
     { label: 'Cloud Status', path: '/cloud-status', icon: Server },
+    { label: 'Engine', path: '/dashboard/engine', icon: Cpu },
     { label: 'Queue', path: '/queue-health', icon: Activity },
     { label: 'System Flow', path: '/system-flow', icon: Workflow },
     { label: 'Analytics', path: '/analytics', icon: BarChart3 },

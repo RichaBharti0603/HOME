@@ -11,6 +11,7 @@ from app.models.incident import Incident
 from app.models.alert import Alert
 from app.monitoring.checker import MonitoringEngine
 from app.monitoring.classifier import classify_failure
+from app.engine.orchestrator.scheduler import MonitoringOrchestrator
 from app.alerts.engine import AlertPolicyEngine
 from datetime import datetime
 import logging
@@ -46,37 +47,51 @@ def check_single_monitor(self, monitor_id: int):
         if not monitor:
             return {"error": "Monitor not found"}
 
-        result = MonitoringEngine.run_full_check(
+        # Run Advanced Engine
+        engine_result = MonitoringOrchestrator.run_full_pipeline(
             url=monitor.url,
-            expected_status=monitor.expected_status,
             expected_keyword=monitor.expected_keyword
         )
-        classification = classify_failure(result)
         
         # Determine status
-        status = result.status.value.upper()
+        status = engine_result["status"]
         prev_status = monitor.status
+        
+        # Map classification from engine_result
+        classification = {
+            "severity": "Critical" if status == "DOWN" else "Warning" if status == "DEGRADED" else "Recovery",
+            "type": "NETWORK_FAILURE" if not engine_result["network"]["reachable"] else "HTTP_FAILURE" if not engine_result["http"]["success"] else "CONTENT_CHANGE" if status == "DEGRADED" else "HEALTHY",
+            "explanation": engine_result["http"].get("error") or engine_result["network"].get("error") or "Service is responding normally."
+        }
         
         # Update Monitor
         monitor.status = status
         monitor.last_checked = datetime.utcnow()
-        monitor.last_response_time = int(result.total_duration_ms)
+        monitor.last_response_time = int(engine_result["http"]["total_time"]) if engine_result["http"]["total_time"] else 0
         
-        # Log Result
+        # Log Result with deep metrics
         log = MonitorLog(
             monitor_id=monitor.id,
             status=status,
-            response_time=int(result.total_duration_ms),
-            error_message=classification["explanation"],
-            dns_ms=int(result.dns.duration_ms) if result.dns else None,
-            tcp_ms=int(result.tcp.duration_ms) if result.tcp else None,
-            http_ms=int(result.http.response_time_ms) if result.http else None,
-            ssl_issuer=result.http.ssl_issuer if result.http else None,
-            ssl_days_remaining=result.http.ssl_days_remaining if result.http else None,
-            tls_handshake_ms=int(result.http.tls_handshake_ms) if result.http else None,
-            ttfb_ms=int(result.http.ttfb_ms) if result.http else None,
-            redirects=result.http.redirects if result.http else None
+            response_time=int(engine_result["http"]["total_time"]) if engine_result["http"]["total_time"] else 0,
+            error_message=engine_result["http"].get("error"),
+            dns_ms=int(engine_result["network"]["dns_time"]) if engine_result["network"]["dns_time"] else None,
+            tcp_ms=int(engine_result["network"]["tcp_time"]) if engine_result["network"]["tcp_time"] else None,
+            http_ms=int(engine_result["http"]["total_time"]) if engine_result["http"]["total_time"] else None,
+            ssl_issuer=engine_result["http"].get("tls_issuer"),
+            tls_handshake_ms=int(engine_result["http"]["tls_time"]) if engine_result["http"]["tls_time"] else None,
+            ttfb_ms=int(engine_result["http"]["ttfb"]) if engine_result["http"]["ttfb"] else None,
+            ping_ms=int(engine_result["network"]["latency"]) if engine_result["network"]["latency"] else None,
+            html_hash=engine_result["content"].get("content_hash")
         )
+        
+        # Change Detection logic
+        if monitor.last_html_hash and engine_result["content"].get("content_hash"):
+            if monitor.last_html_hash != engine_result["content"]["content_hash"]:
+                logger.info(f"Content change detected for {monitor.url}")
+                # We could trigger a specific "CONTENT_CHANGED" alert here
+        
+        monitor.last_html_hash = engine_result["content"].get("content_hash")
         db.add(log)
 
         # Implement Retry Logic

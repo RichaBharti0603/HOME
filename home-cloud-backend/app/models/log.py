@@ -23,3 +23,5 @@ class MonitorLog(Base):
     tls_handshake_ms = Column(Integer, nullable=True)
     ttfb_ms = Column(Integer, nullable=True)
     redirects = Column(Integer, nullable=True)
+    ping_ms = Column(Integer, nullable=True)
+    html_hash = Column(String, nullable=True)

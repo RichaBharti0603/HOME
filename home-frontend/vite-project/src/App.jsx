@@ -20,6 +20,7 @@ import QueueHealth from './pages/QueueHealth';
 import AlertCenter from './pages/AlertCenter';
 import OnboardingWizard from './pages/OnboardingWizard';
 import PaymentSuccess from './pages/PaymentSuccess';
+import EngineeringView from './pages/EngineeringView';
 
 function App() {
   return (
@@ -125,6 +126,14 @@ function App() {
           <ProtectedRoute>
             <DashboardLayout>
               <AlertCenter />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/dashboard/engine" element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <EngineeringView />
             </DashboardLayout>
           </ProtectedRoute>
         } />

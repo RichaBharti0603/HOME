@@ -27,6 +27,7 @@ class Monitor(Base):
     last_checked = Column(DateTime, nullable=True)
     last_response_time = Column(Integer, nullable=True) # in ms
     threshold_ms = Column(Integer, default=2000) # threshold for SLOW alerts
+    last_html_hash = Column(String, nullable=True)
 
     # Relationships
     tenant = relationship("Tenant", back_populates="monitors")
