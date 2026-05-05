@@ -24,7 +24,7 @@ const Register = () => {
     setError('');
     try {
       console.log("Attempting to register with:", formData.email);
-      const response = await requestWithRetry(() => api.post('/register', {
+      const response = await requestWithRetry(() => api.post('/auth/register', {
         email: formData.email,
         password: formData.password
       }));

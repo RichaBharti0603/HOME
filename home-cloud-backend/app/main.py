@@ -1,18 +1,16 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from app.scheduler import start_scheduler
 from app.config import get_settings
 import logging
-from app.database import engine, Base, get_db
+from app.database import engine, Base
 import app.models.user
 import app.models.monitor
 import app.models.log
 import app.models.alert
 import app.models.tenant
 import app.models.billing
-from sqlalchemy import text
-import redis
 from app.core.system_guard import RedisHealthGuard
 
 # Routers
@@ -32,9 +30,6 @@ logging.getLogger("apscheduler").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-
-
-
 # ============================================
 # Lifespan
 # ============================================
@@ -52,6 +47,7 @@ async def lifespan(app: FastAPI):
     try:
         # Check Redis Health
         RedisHealthGuard.ping_and_verify()
+        logger.info(f"Redis Status: {'Available' if RedisHealthGuard.is_available else 'Unavailable'}")
         
         # Phase 2: Conditional Scheduler
         import os
@@ -62,6 +58,10 @@ async def lifespan(app: FastAPI):
             logger.warning("Scheduler DISABLED via ENABLE_SCHEDULER env var")
     except Exception as e:
         logger.error(f"Failed to start the scheduler: {e}")
+
+    # Log all registered routes for debug visibility
+    for route in app.routes:
+        logger.info(f"Registered route: {route.path} ({getattr(route, 'methods', 'WS')})")
 
     yield
 
@@ -75,34 +75,33 @@ app = FastAPI(
     description="Hyper-Optimized Monitoring Engine",
     version="0.1.0",
     lifespan=lifespan,
-    docs_url="/docs" if settings.debug else None,
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
 # ============================================
-# CORS Configuration
+# CORS Configuration (STRICT)
 # ============================================
-# Production Origin: https://home-frontend-fjvl.onrender.com
-# Development Origins: localhost:3000, localhost:5173
 origins = [
     "https://home-frontend-fjvl.onrender.com",
+    "http://localhost:5173", # Keep for local dev ease if needed, but primary is the render one
     "http://localhost:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:5173",
 ]
-
-# If in development mode, we can be more permissive if needed
-if settings.app_env != "production":
-    logger.info("Development mode: Allowing extra origins for testing")
-    # You could add more here if needed
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins if settings.app_env == "production" else ["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ============================================
+# OPTIONS Handler (PREFLIGHT)
+# ============================================
+@app.options("/{full_path:path}")
+async def preflight_handler():
+    return Response(status_code=200)
 
 # Phase 5: Logging Middleware (including Origin tracking)
 import time
@@ -117,7 +116,6 @@ async def log_requests(request, call_next):
     duration = time.time() - start_time
     logger.info(f"Request {request.url} took {duration:.4f}s | Status: {response.status_code}")
     return response
-
 
 # ============================================
 # Routers
@@ -138,9 +136,11 @@ app.include_router(ai.router)
 # ============================================
 @app.get("/health", tags=["System"])
 async def health_check():
-    # Phase 1: Minimal Health Check to avoid cold-start delays
     return {"status": "ok", "app": settings.app_name}
 
+@app.get("/test", tags=["System"])
+async def test_check():
+    return {"status": "ok", "message": "H.O.M.E backend successfully loaded"}
 
 @app.get("/", tags=["System"])
 async def root():

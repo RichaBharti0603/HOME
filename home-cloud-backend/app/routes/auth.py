@@ -9,7 +9,7 @@ from app.models.tenant import Tenant
 from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
 from app.utils.security import get_password_hash, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_current_user
 
-router = APIRouter(tags=["Authentication"])
+router = APIRouter(prefix="/auth", tags=["Auth"])
 
 from fastapi.concurrency import run_in_threadpool
 import time

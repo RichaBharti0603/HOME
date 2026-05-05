@@ -15,13 +15,13 @@ from app.utils.security import get_current_user
 from app.models.user import User
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="", tags=["Monitors"])
+router = APIRouter(prefix="/monitors", tags=["Monitors"])
 
 
 # ============================================
 # VALIDATE URL (WIZARD PREVIEW)
 # ============================================
-@router.post("/monitors/validate")
+@router.post("/validate")
 def validate_url(data: URLValidateRequest):
     result = WebsiteRegistrationService.validate_and_enrich_website(data.url)
     if result.get("error"):
@@ -32,7 +32,7 @@ def validate_url(data: URLValidateRequest):
 # ============================================
 # CREATE MONITOR
 # ============================================
-@router.post("/monitors", response_model=MonitorResponse)
+@router.post("", response_model=MonitorResponse)
 def create_monitor(data: MonitorCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     url = str(data.url)
     
@@ -69,7 +69,7 @@ def create_monitor(data: MonitorCreate, current_user: User = Depends(get_current
 # ============================================
 # GET ALL MONITORS (DASHBOARD)
 # ============================================
-@router.get("/monitors", response_model=List[MonitorResponse])
+@router.get("", response_model=List[MonitorResponse])
 def get_monitors(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not current_user.tenant_id:
         return []
@@ -80,7 +80,7 @@ def get_monitors(current_user: User = Depends(get_current_user), db: Session = D
 # ============================================
 # GET ALL INCIDENTS
 # ============================================
-@router.get("/monitors/incidents", response_model=List[IncidentResponse])
+@router.get("/incidents", response_model=List[IncidentResponse])
 def get_all_incidents(db: Session = Depends(get_db)):
     incidents = db.query(Incident).order_by(Incident.started_at.desc()).all()
     return incidents
@@ -89,7 +89,7 @@ def get_all_incidents(db: Session = Depends(get_db)):
 # ============================================
 # GET SINGLE MONITOR
 # ============================================
-@router.get("/monitors/{monitor_id}", response_model=MonitorResponse)
+@router.get("/{monitor_id}", response_model=MonitorResponse)
 def get_monitor(monitor_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     monitor = db.query(Monitor).filter(Monitor.id == monitor_id, Monitor.tenant_id == current_user.tenant_id).first()
 
@@ -102,7 +102,7 @@ def get_monitor(monitor_id: int, current_user: User = Depends(get_current_user),
 # ============================================
 # GET ALL MONITOR LOGS (GLOBAL CHART)
 # ============================================
-@router.get("/monitors/all/logs", response_model=List[MonitorLogResponse])
+@router.get("/all/logs", response_model=List[MonitorLogResponse])
 def get_all_monitor_logs(limit: int = 100, db: Session = Depends(get_db)):
     logs = db.query(MonitorLog).order_by(MonitorLog.timestamp.desc()).limit(limit).all()
     return logs
@@ -111,7 +111,7 @@ def get_all_monitor_logs(limit: int = 100, db: Session = Depends(get_db)):
 # ============================================
 # GET MONITOR LOGS
 # ============================================
-@router.get("/monitors/{monitor_id}/logs", response_model=List[MonitorLogResponse])
+@router.get("/{monitor_id}/logs", response_model=List[MonitorLogResponse])
 def get_monitor_logs(monitor_id: int, limit: int = 50, db: Session = Depends(get_db)):
     logs = db.query(MonitorLog).filter(MonitorLog.monitor_id == monitor_id).order_by(MonitorLog.timestamp.desc()).limit(limit).all()
     return logs
@@ -120,7 +120,7 @@ def get_monitor_logs(monitor_id: int, limit: int = 50, db: Session = Depends(get
 # ============================================
 # DELETE MONITOR
 # ============================================
-@router.delete("/monitors/{monitor_id}")
+@router.delete("/{monitor_id}")
 def delete_monitor(monitor_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     monitor = db.query(Monitor).filter(Monitor.id == monitor_id, Monitor.tenant_id == current_user.tenant_id).first()
 
@@ -136,7 +136,7 @@ def delete_monitor(monitor_id: int, current_user: User = Depends(get_current_use
 # ============================================
 # GET MONITOR HISTORY (ASCENDING)
 # ============================================
-@router.get("/monitors/{monitor_id}/history", response_model=List[MonitorLogResponse])
+@router.get("/{monitor_id}/history", response_model=List[MonitorLogResponse])
 def get_monitor_history(monitor_id: int, db: Session = Depends(get_db)):
     logs = db.query(MonitorLog).filter(MonitorLog.monitor_id == monitor_id).order_by(MonitorLog.timestamp.asc()).all()
     return logs
@@ -145,7 +145,7 @@ def get_monitor_history(monitor_id: int, db: Session = Depends(get_db)):
 # ============================================
 # GET MONITOR STATS
 # ============================================
-@router.get("/monitors/{monitor_id}/stats")
+@router.get("/{monitor_id}/stats")
 def get_monitor_stats(monitor_id: int, db: Session = Depends(get_db)):
     monitor = db.query(Monitor).filter(Monitor.id == monitor_id).first()
     if not monitor:
