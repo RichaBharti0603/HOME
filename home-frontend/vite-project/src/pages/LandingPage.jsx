@@ -64,19 +64,25 @@ const LandingPage = () => {
       badge: 'For Founders',
       title: 'Startups',
       desc: 'Stay ahead of outages with instant visibility into uptime, SSL health, and latency trends.',
-      image: '/images/4.jpg',
+      image: 'https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=1400&q=80',
     },
     {
       badge: 'For Teams',
       title: 'Engineering Teams',
       desc: 'Track APIs and production services in one place, then move from alert to action quickly.',
-      image: '/images/hero.jpg',
+      image: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1400&q=80',
     },
     {
       badge: 'For Agencies',
       title: 'Client Operations',
       desc: 'Monitor multiple client properties with clean reports and dependable incident timelines.',
-      image: '/images/5.jpg',
+      image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1400&q=80',
+    },
+    {
+      badge: 'For Personal Use',
+      title: 'Personal Projects',
+      desc: 'Keep your portfolio, side projects, and personal websites reliable with simple uptime alerts.',
+      image: 'https://images.unsplash.com/photo-1515378960530-7c0da6231fb1?auto=format&fit=crop&w=1400&q=80',
     },
   ];
 
@@ -179,7 +185,7 @@ const LandingPage = () => {
             <p className="text-gray-500 text-lg">Whoever you are, there is a monitoring workflow designed for you.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             {targetGroups.map((group) => (
               <motion.div
                 key={group.title}
