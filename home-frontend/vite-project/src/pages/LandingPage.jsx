@@ -44,11 +44,18 @@ const LandingPage = () => {
   ];
 
   return (
-    <div className="bg-background text-foreground selection:bg-accent-primary/20 min-h-screen">
+    <>
+      {/* Logo first under root scroll-smooth (DOM order); fixed so it still aligns with the nav bar */}
+      <img
+        src="/images/logo.jpg"
+        alt="Logo"
+        className="pointer-events-auto fixed left-12 top-2 z-[101] h-20 w-auto object-contain rounded-lg shadow-sm"
+      />
+      <div className="bg-background text-foreground selection:bg-accent-primary/20 min-h-screen">
       {/* NAVBAR */}
       <nav className="fixed top-0 w-full z-[100] border-b border-border bg-white/80 backdrop-blur-md px-12 h-24 flex items-center justify-between">
-          <div className="flex items-center">
-            <img src="/images/logo.jpg" alt="Logo" className="h-20 w-auto object-contain rounded-lg shadow-sm" />
+          <div className="flex items-center" aria-hidden>
+            <img src="/images/logo.jpg" alt="" className="invisible pointer-events-none h-20 w-auto object-contain rounded-lg shadow-sm" />
           </div>
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
            <a href="#features" className="hover:text-gray-900 transition-colors">Features</a>
@@ -185,7 +192,8 @@ const LandingPage = () => {
             <span>Made with care</span>
          </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 };
 
