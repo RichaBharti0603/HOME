@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models.monitor import Monitor
+from app.core.system_guard import RedisHealthGuard
 
 logger = logging.getLogger(__name__)
 
@@ -52,16 +53,19 @@ class SchedulerOrchestrator:
                 
                 if job_id not in existing_jobs:
                     # Add new job
-                    from app.worker.tasks import check_single_monitor
+                    from app.worker.tasks import dispatch_monitor_check
                     scheduler.add_job(
-                        check_single_monitor.delay,
+                        dispatch_monitor_check,
                         trigger=IntervalTrigger(seconds=interval_sec),
                         args=[monitor.id],
                         id=job_id,
                         name=f"Monitor {monitor.project_name}",
                         replace_existing=True
                     )
-                    logger.info(f"Added dynamic scheduler job for monitor {monitor.id} ({interval_sec}s)")
+                    if RedisHealthGuard.is_available:
+                        logger.info(f"Added scheduler job for monitor {monitor.id} via Redis Celery ({interval_sec}s)")
+                    else:
+                        logger.info(f"Added scheduler job for monitor {monitor.id} with local fallback ({interval_sec}s)")
                 else:
                     # Check if frequency changed
                     job = existing_jobs[job_id]
