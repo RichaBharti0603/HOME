@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from app.database import get_db
 from app.models.user import User
+from app.models.tenant import Tenant
 from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
 from app.utils.security import get_password_hash, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_current_user
 
@@ -26,6 +27,22 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
         password=hashed_password,
     )
     db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+
+    # Provision a tenant for each new account so onboarding and billing work.
+    tenant = Tenant(
+        owner_user_id=db_user.id,
+        company_name=user_in.email.split("@")[0],
+        subscription_plan="starter",
+        payment_status="pending",
+        onboarding_complete=False,
+    )
+    db.add(tenant)
+    db.commit()
+    db.refresh(tenant)
+
+    db_user.tenant_id = tenant.id
     db.commit()
     db.refresh(db_user)
     return db_user
