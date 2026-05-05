@@ -89,13 +89,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ============================================
-# OPTIONS Handler (PREFLIGHT)
-# ============================================
-@app.options("/{full_path:path}")
-async def preflight_handler():
-    return Response(status_code=200)
-
 # Phase 5: Logging Middleware (including Origin tracking)
 import time
 @app.middleware("http")
