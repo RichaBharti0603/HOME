@@ -12,10 +12,22 @@ from app.models.alert import Alert
 from app.monitoring.checker import MonitoringEngine
 from app.monitoring.classifier import classify_failure
 from app.alerts.engine import AlertPolicyEngine
+from app.core.system_guard import RedisHealthGuard
 from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
+
+def dispatch_monitor_check(monitor_id: int):
+    """
+    Dispatch monitor check through Celery when Redis is available.
+    Fallback to local execution in development when Redis is down.
+    """
+    if RedisHealthGuard.is_available:
+        check_single_monitor.delay(monitor_id)
+        return
+    # Run task in-process to keep monitoring functional without Redis.
+    check_single_monitor.apply(args=[monitor_id], throw=False)
 
 
 @celery_app.task(name="app.worker.tasks.run_all_monitors")
@@ -27,7 +39,7 @@ def run_all_monitors():
     try:
         monitors = db.query(Monitor).all()
         for m in monitors:
-            check_single_monitor.delay(m.id)
+            dispatch_monitor_check(m.id)
         return {"status": "dispatched", "count": len(monitors)}
     finally:
         db.close()

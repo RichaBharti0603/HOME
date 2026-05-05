@@ -1,14 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Zap, Shield, Activity, 
-  ArrowRight, CheckCircle2, Globe, 
-  MessageSquare, BarChart3, Lock
-} from 'lucide-react';
+import { ArrowRight, ChevronDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const [openFaq, setOpenFaq] = useState(0);
 
   const features = [
     {
@@ -43,6 +40,25 @@ const LandingPage = () => {
     },
   ];
 
+  const faqs = [
+    {
+      question: 'How quickly will I know if my website goes down?',
+      answer: 'H.O.M.E checks your endpoints at your configured interval and sends alerts as soon as a failure threshold is reached.',
+    },
+    {
+      question: 'Can I monitor multiple websites and APIs?',
+      answer: 'Yes. You can create multiple monitors, each with its own URL, frequency, retry policy, and alert rules.',
+    },
+    {
+      question: 'Is my monitoring data private?',
+      answer: 'Yes. Your account data stays scoped to your workspace, and local AI analysis can run without sending sensitive logs externally.',
+    },
+    {
+      question: 'Do I need Stripe to test locally?',
+      answer: 'No. In local development, billing can fall back to a test activation flow so you can validate onboarding end-to-end.',
+    },
+  ];
+
   return (
     <>
       {/* Logo first under root scroll-smooth (DOM order); fixed so it still aligns with the nav bar */}
@@ -60,6 +76,7 @@ const LandingPage = () => {
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
            <a href="#features" className="hover:text-gray-900 transition-colors">Features</a>
            <a href="#pricing" className="hover:text-gray-900 transition-colors">Pricing</a>
+           <a href="#faq" className="hover:text-gray-900 transition-colors">FAQ</a>
            <a href="#about" className="hover:text-gray-900 transition-colors">About</a>
         </div>
         <div className="flex items-center gap-4">
@@ -155,6 +172,42 @@ const LandingPage = () => {
                 <p className="text-gray-600 leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="py-28 px-12 bg-gray-50 border-y border-gray-100">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center space-y-4 mb-12">
+            <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">Frequently Asked Questions</h2>
+            <p className="text-gray-500 text-lg">Everything you need to know before getting started.</p>
+          </div>
+
+          <div className="space-y-4">
+            {faqs.map((item, index) => {
+              const isOpen = openFaq === index;
+              return (
+                <div key={item.question} className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaq(isOpen ? -1 : index)}
+                    className="w-full px-6 py-5 flex items-center justify-between text-left"
+                  >
+                    <span className="text-base md:text-lg font-semibold text-gray-900">{item.question}</span>
+                    <ChevronDown
+                      size={20}
+                      className={`text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  {isOpen && (
+                    <div className="px-6 pb-6 text-gray-600 leading-relaxed border-t border-gray-100">
+                      <p className="pt-4">{item.answer}</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
