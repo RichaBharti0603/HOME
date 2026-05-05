@@ -59,6 +59,27 @@ const LandingPage = () => {
     },
   ];
 
+  const targetGroups = [
+    {
+      badge: 'For Founders',
+      title: 'Startups',
+      desc: 'Stay ahead of outages with instant visibility into uptime, SSL health, and latency trends.',
+      image: '/images/4.jpg',
+    },
+    {
+      badge: 'For Teams',
+      title: 'Engineering Teams',
+      desc: 'Track APIs and production services in one place, then move from alert to action quickly.',
+      image: '/images/hero.jpg',
+    },
+    {
+      badge: 'For Agencies',
+      title: 'Client Operations',
+      desc: 'Monitor multiple client properties with clean reports and dependable incident timelines.',
+      image: '/images/5.jpg',
+    },
+  ];
+
   return (
     <>
       {/* Logo first under root scroll-smooth (DOM order); fixed so it still aligns with the nav bar */}
@@ -147,6 +168,41 @@ const LandingPage = () => {
               className="relative rounded-2xl md:rounded-3xl border border-gray-200/50 shadow-2xl object-cover w-full h-auto max-h-[50vh] lg:max-h-[60vh] object-contain lg:object-cover bg-white transform group-hover:scale-[1.02] transition-transform duration-500"
             />
           </motion.div>
+        </div>
+      </section>
+
+      {/* WHO WE SERVE */}
+      <section id="audience" className="py-28 px-6 md:px-12 bg-[#f2f7fc]">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center space-y-3 mb-12">
+            <h2 className="text-4xl font-extrabold tracking-tight text-gray-900">Built for every stage of growth.</h2>
+            <p className="text-gray-500 text-lg">Whoever you are, there is a monitoring workflow designed for you.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {targetGroups.map((group) => (
+              <motion.div
+                key={group.title}
+                whileHover={{ y: -6 }}
+                className="relative min-h-[420px] rounded-3xl overflow-hidden shadow-xl group"
+              >
+                <img
+                  src={group.image}
+                  alt={group.title}
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
+
+                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                  <span className="inline-flex text-xs font-semibold tracking-wide bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full border border-white/30">
+                    {group.badge}
+                  </span>
+                  <h3 className="text-3xl font-bold mt-4">{group.title}</h3>
+                  <p className="text-white/85 mt-3 leading-relaxed">{group.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
