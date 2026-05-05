@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.scheduler import start_scheduler
 from app.config import get_settings
@@ -30,6 +30,16 @@ logging.getLogger("apscheduler").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    logger.error(f"CRASH: {str(exc)}")
+    return JSONResponse(
+        status_code=500,
+        content={"error": str(exc)},
+    )
+
 # ============================================
 # Lifespan
 # ============================================
@@ -45,9 +55,10 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to database operations: {e}")
 
     try:
-        # Check Redis Health
-        RedisHealthGuard.ping_and_verify()
-        logger.info(f"Redis Status: {'Available' if RedisHealthGuard.is_available else 'Unavailable'}")
+        # Phase 5: Disable Redis temporarily for debugging
+        # RedisHealthGuard.ping_and_verify()
+        # logger.info(f"Redis Status: {'Available' if RedisHealthGuard.is_available else 'Unavailable'}")
+        logger.warning("Redis checks temporarily DISABLED for debugging")
         
         # Phase 2: Conditional Scheduler
         import os
@@ -99,6 +110,12 @@ class ForceCORSMiddleware(BaseHTTPMiddleware):
         return response
 
 app.add_middleware(ForceCORSMiddleware)
+
+
+
+@app.options("/{full_path:path}")
+async def preflight_handler(request: Request):
+    return {}
 
 # Phase 5: Logging Middleware (including Origin tracking)
 import time

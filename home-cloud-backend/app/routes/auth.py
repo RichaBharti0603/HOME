@@ -16,45 +16,53 @@ import time
 
 @router.post("/register", response_model=UserResponse)
 async def register(user_in: UserCreate, db: Session = Depends(get_db)):
+    print("REGISTER HIT:", user_in.dict())
     start_time = time.time()
-    # Check if user exists
-    user = db.query(User).filter(User.email == user_in.email).first()
-    if user:
-        raise HTTPException(
-            status_code=400,
-            detail="The user with this email already exists in the system."
+    
+    try:
+        # Check if user exists
+        user = db.query(User).filter(User.email == user_in.email).first()
+        if user:
+            raise HTTPException(
+                status_code=400,
+                detail="The user with this email already exists in the system."
+            )
+        
+        # Phase 1: Non-blocking password hashing
+        hashed_password = await run_in_threadpool(get_password_hash, user_in.password)
+        
+        # Create new user
+        db_user = User(
+            email=user_in.email,
+            password=hashed_password,
         )
-    
-    # Phase 1: Non-blocking password hashing
-    hashed_password = await run_in_threadpool(get_password_hash, user_in.password)
-    
-    # Create new user
-    db_user = User(
-        email=user_in.email,
-        password=hashed_password,
-    )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
 
-    # Phase 1: Keep tenant creation simple and fast
-    tenant = Tenant(
-        owner_user_id=db_user.id,
-        company_name=user_in.email.split("@")[0],
-        subscription_plan="starter",
-        payment_status="pending",
-        onboarding_complete=False,
-    )
-    db.add(tenant)
-    db.commit()
-    db.refresh(tenant)
+        # Phase 1: Keep tenant creation simple and fast
+        tenant = Tenant(
+            owner_user_id=db_user.id,
+            company_name=user_in.email.split("@")[0],
+            subscription_plan="starter",
+            payment_status="pending",
+            onboarding_complete=False,
+        )
+        db.add(tenant)
+        db.commit()
+        db.refresh(tenant)
 
-    db_user.tenant_id = tenant.id
-    db.commit()
-    db.refresh(db_user)
-    
-    logger.info(f"/register took {time.time() - start_time:.4f}s")
-    return db_user
+        db_user.tenant_id = tenant.id
+        db.commit()
+        db.refresh(db_user)
+        
+        logger.info(f"/register took {time.time() - start_time:.4f}s")
+        return db_user
+    except Exception as e:
+        print("REGISTER ERROR:", str(e))
+        # Log to loguru as well for cloud visibility
+        logger.error(f"REGISTER ERROR: {str(e)}")
+        raise e
 
 @router.post("/login", response_model=Token)
 async def login(user_in: UserLogin, db: Session = Depends(get_db)):
