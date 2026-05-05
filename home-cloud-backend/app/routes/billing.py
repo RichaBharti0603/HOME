@@ -27,7 +27,12 @@ def get_plans():
     ]
 
 @router.post("/subscription/create")
-def create_subscription(req: SubscriptionRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def create_subscription(
+    req: SubscriptionRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if not current_user.tenant:
         raise HTTPException(status_code=400, detail="User does not belong to a tenant yet.")
     
@@ -46,6 +51,23 @@ def create_subscription(req: SubscriptionRequest, current_user: User = Depends(g
     # Update tenant plan
     tenant.subscription_plan = req.plan_id
     db.commit()
+
+    # Prefer request origin so localhost/127.0.0.1 token context remains consistent.
+    frontend_base = request.headers.get("origin") or settings.frontend_url
+
+    # Local/dev fallback when Stripe is not configured.
+    if not settings.stripe_secret_key:
+        tenant.payment_status = "active"
+        tenant.onboarding_complete = True
+        billing = Billing(
+            tenant_id=tenant.id,
+            subscription_id=f"local_{tenant.id}_{req.plan_id}",
+            amount=selected_plan["amount"] / 100.0,
+            status="active"
+        )
+        db.add(billing)
+        db.commit()
+        return {"url": f"{frontend_base}/payment-success?session_id=local_{tenant.id}"}
         
     try:
         checkout_session = stripe.checkout.Session.create(
@@ -62,8 +84,8 @@ def create_subscription(req: SubscriptionRequest, current_user: User = Depends(g
                 'quantity': 1,
             }],
             mode='subscription',
-            success_url=f"{settings.frontend_url}/payment-success?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{settings.frontend_url}/setup",
+            success_url=f"{frontend_base}/payment-success?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{frontend_base}/setup",
             client_reference_id=str(tenant.id),
             customer_email=current_user.email
         )

@@ -1,14 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Zap, Shield, Activity, 
-  ArrowRight, CheckCircle2, Globe, 
-  MessageSquare, BarChart3, Lock
-} from 'lucide-react';
+import { ArrowRight, ChevronDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const [openFaq, setOpenFaq] = useState(0);
 
   const features = [
     {
@@ -43,16 +40,74 @@ const LandingPage = () => {
     },
   ];
 
+  const faqs = [
+    {
+      question: 'How quickly will I know if my website goes down?',
+      answer: 'H.O.M.E checks your endpoints at your configured interval and sends alerts as soon as a failure threshold is reached.',
+    },
+    {
+      question: 'Can I monitor multiple websites and APIs?',
+      answer: 'Yes. You can create multiple monitors, each with its own URL, frequency, retry policy, and alert rules.',
+    },
+    {
+      question: 'Is my monitoring data private?',
+      answer: 'Yes. Your account data stays scoped to your workspace, and local AI analysis can run without sending sensitive logs externally.',
+    },
+    {
+      question: 'Do I need Stripe to test locally?',
+      answer: 'No. In local development, billing can fall back to a test activation flow so you can validate onboarding end-to-end.',
+    },
+  ];
+
+  const targetGroups = [
+    {
+      badge: 'For Founders',
+      title: 'Startups',
+      desc: 'Stay ahead of outages with instant visibility into uptime, SSL health, and latency trends.',
+      image: '/images/startup.jpg',
+      objectPosition: '50% 45%',
+    },
+    {
+      badge: 'For Teams',
+      title: 'Engineering Teams',
+      desc: 'Track APIs and production services in one place, then move from alert to action quickly.',
+      image: '/images/engineering%20teams.jpg',
+      objectPosition: '50% 58%',
+    },
+    {
+      badge: 'For Agencies',
+      title: 'Client Operations',
+      desc: 'Monitor multiple client properties with clean reports and dependable incident timelines.',
+      image: '/images/client%20operations.jpg',
+      objectPosition: '50% 52%',
+    },
+    {
+      badge: 'For Personal Use',
+      title: 'Personal Projects',
+      desc: 'Keep your portfolio, side projects, and personal websites reliable with simple uptime alerts.',
+      image: '/images/personal.jpg',
+      objectPosition: '50% 45%',
+    },
+  ];
+
   return (
-    <div className="bg-background text-foreground selection:bg-accent-primary/20 min-h-screen">
+    <>
+      {/* Logo first under root scroll-smooth (DOM order); fixed so it still aligns with the nav bar */}
+      <img
+        src="/images/logo.jpg"
+        alt="Logo"
+        className="pointer-events-auto fixed left-12 top-2 z-[101] h-20 w-auto object-contain rounded-lg shadow-sm"
+      />
+      <div className="bg-background text-foreground selection:bg-accent-primary/20 min-h-screen">
       {/* NAVBAR */}
       <nav className="fixed top-0 w-full z-[100] border-b border-border bg-white/80 backdrop-blur-md px-12 h-24 flex items-center justify-between">
-          <div className="flex items-center">
-            <img src="/images/logo.jpg" alt="Logo" className="h-20 w-auto object-contain rounded-lg shadow-sm" />
+          <div className="flex items-center" aria-hidden>
+            <img src="/images/logo.jpg" alt="" className="invisible pointer-events-none h-20 w-auto object-contain rounded-lg shadow-sm" />
           </div>
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
            <a href="#features" className="hover:text-gray-900 transition-colors">Features</a>
            <a href="#pricing" className="hover:text-gray-900 transition-colors">Pricing</a>
+           <a href="#faq" className="hover:text-gray-900 transition-colors">FAQ</a>
            <a href="#about" className="hover:text-gray-900 transition-colors">About</a>
         </div>
         <div className="flex items-center gap-4">
@@ -126,6 +181,42 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* WHO WE SERVE */}
+      <section id="audience" className="py-28 px-6 md:px-12 bg-[#f2f7fc]">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center space-y-3 mb-12">
+            <h2 className="text-4xl font-extrabold tracking-tight text-gray-900">Built for every stage of growth.</h2>
+            <p className="text-gray-500 text-lg">Whoever you are, there is a monitoring workflow designed for you.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            {targetGroups.map((group) => (
+              <motion.div
+                key={group.title}
+                whileHover={{ y: -6 }}
+                className="relative h-[420px] rounded-3xl overflow-hidden shadow-xl group"
+              >
+                <img
+                  src={group.image}
+                  alt={group.title}
+                  style={{ objectPosition: group.objectPosition }}
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
+
+                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                  <span className="inline-flex text-xs font-semibold tracking-wide bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full border border-white/30">
+                    {group.badge}
+                  </span>
+                  <h3 className="text-3xl font-bold mt-4">{group.title}</h3>
+                  <p className="text-white/85 mt-3 leading-relaxed">{group.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* FEATURES GRID */}
       <section id="features" className="py-32 px-12 bg-white">
         <div className="max-w-7xl mx-auto">
@@ -148,6 +239,119 @@ const LandingPage = () => {
                 <p className="text-gray-600 leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section id="pricing" className="py-28 px-6 md:px-12 bg-white border-y border-gray-100">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center space-y-4 mb-14">
+            <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">Choose a Plan to Activate</h2>
+            <p className="text-gray-500 text-lg">Your monitor is ready. Select a subscription plan to start monitoring.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="rounded-2xl border-2 border-blue-400 p-8 bg-white shadow-sm">
+              <p className="text-sm font-semibold text-gray-500">Starter</p>
+              <h3 className="text-5xl font-bold text-gray-900 mt-3">$10.00<span className="text-2xl text-gray-500">/mo</span></h3>
+              <ul className="mt-6 space-y-2 text-gray-600">
+                <li>Basic Monitoring</li>
+                <li>Email alerts</li>
+                <li>Basic Reports</li>
+              </ul>
+              <button onClick={() => navigate('/register')} className="premium-button mt-8 w-full justify-center">Select Starter</button>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 p-8 bg-white shadow-sm">
+              <p className="text-sm font-semibold text-gray-500">Pro</p>
+              <h3 className="text-5xl font-bold text-gray-900 mt-3">$29.00<span className="text-2xl text-gray-500">/mo</span></h3>
+              <ul className="mt-6 space-y-2 text-gray-600">
+                <li>Advanced Analytics</li>
+                <li>Webhook Alerts</li>
+                <li>SLA Reports</li>
+              </ul>
+              <button onClick={() => navigate('/register')} className="premium-button mt-8 w-full justify-center">Select Pro</button>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 p-8 bg-white shadow-sm">
+              <p className="text-sm font-semibold text-gray-500">Enterprise</p>
+              <h3 className="text-5xl font-bold text-gray-900 mt-3">$99.00<span className="text-2xl text-gray-500">/mo</span></h3>
+              <ul className="mt-6 space-y-2 text-gray-600">
+                <li>Dedicated Support</li>
+                <li>Custom Intervals</li>
+                <li>API Access</li>
+              </ul>
+              <button onClick={() => navigate('/register')} className="premium-button mt-8 w-full justify-center">Select Enterprise</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="py-28 px-12 bg-gray-50 border-y border-gray-100">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center space-y-4 mb-12">
+            <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">Frequently Asked Questions</h2>
+            <p className="text-gray-500 text-lg">Everything you need to know before getting started.</p>
+          </div>
+
+          <div className="space-y-4">
+            {faqs.map((item, index) => {
+              const isOpen = openFaq === index;
+              return (
+                <div key={item.question} className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaq(isOpen ? -1 : index)}
+                    className="w-full px-6 py-5 flex items-center justify-between text-left"
+                  >
+                    <span className="text-base md:text-lg font-semibold text-gray-900">{item.question}</span>
+                    <ChevronDown
+                      size={20}
+                      className={`text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  {isOpen && (
+                    <div className="px-6 pb-6 text-gray-600 leading-relaxed border-t border-gray-100">
+                      <p className="pt-4">{item.answer}</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ABOUT */}
+      <section id="about" className="py-28 px-6 md:px-12 bg-[#f8fafc]">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-5">
+            <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">About H.O.M.E</h2>
+            <p className="text-gray-600 text-lg leading-relaxed">
+              We built H.O.M.E to make uptime monitoring clear, proactive, and practical for every team.
+              From solo builders to growing companies, our goal is to reduce outage stress and help you ship with confidence.
+            </p>
+            <p className="text-gray-600 leading-relaxed">
+              Our platform combines real-time checks, fast alerts, and friendly insights so that incidents are understood quickly and resolved without guesswork.
+            </p>
+            <button onClick={() => navigate('/register')} className="premium-button px-6 py-3">Build with confidence</button>
+          </div>
+
+          <div className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm space-y-6">
+            <div>
+              <h3 className="text-gray-900 font-semibold text-lg">What we focus on</h3>
+              <p className="text-gray-600 mt-2">Reliable checks, clean dashboards, and actionable alerting.</p>
+            </div>
+            <div>
+              <h3 className="text-gray-900 font-semibold text-lg">Who we build for</h3>
+              <p className="text-gray-600 mt-2">Startups, engineering teams, agencies, and personal creators.</p>
+            </div>
+            <div>
+              <h3 className="text-gray-900 font-semibold text-lg">How we work</h3>
+              <p className="text-gray-600 mt-2">Fast iteration, thoughtful design, and dependable infrastructure.</p>
+            </div>
           </div>
         </div>
       </section>
@@ -185,7 +389,8 @@ const LandingPage = () => {
             <span>Made with care</span>
          </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 };
 
