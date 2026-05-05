@@ -6,25 +6,21 @@ const Topbar = ({ title }) => {
   const location = useLocation();
   const [localAIOffline, setLocalAIOffline] = useState(true);
   
+  const checkLocalAI = async () => {
+    try {
+      const res = await fetch('http://localhost:9000/health');
+      if (res.ok) setLocalAIOffline(false);
+      else setLocalAIOffline(true);
+    } catch (e) {
+      setLocalAIOffline(true);
+    }
+  };
+
   useEffect(() => {
     // Only check local AI if the user is explicitly on the local AI page
-    // or has explicitly enabled it. This prevents cross-origin errors in production.
-    if (location.pathname !== '/install-local-ai' && localStorage.getItem('local_ai_enabled') !== 'true') {
-        return;
+    if (location.pathname === '/install-local-ai') {
+      checkLocalAI();
     }
-
-    const checkLocalAI = async () => {
-      try {
-        const res = await fetch('http://localhost:9000/health');
-        if (res.ok) setLocalAIOffline(false);
-        else setLocalAIOffline(true);
-      } catch (e) {
-        setLocalAIOffline(true);
-      }
-    };
-    checkLocalAI();
-    const interval = setInterval(checkLocalAI, 10000);
-    return () => clearInterval(interval);
   }, [location.pathname]);
   
   const navItems = [
@@ -76,12 +72,12 @@ const Topbar = ({ title }) => {
         <div className="flex items-center gap-3 bg-surface/80 backdrop-blur-xl border border-white/40 shadow-floating p-1.5 rounded-pill">
           
           {/* Local AI Status Indicator */}
-          <div className={`hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full border mr-1 transition-colors ${localAIOffline ? 'bg-gray-50 border-gray-200' : 'bg-blue-50/80 border-blue-200/50'}`}>
+          <button onClick={checkLocalAI} className={`hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full border mr-1 transition-colors hover:shadow-sm ${localAIOffline ? 'bg-gray-50 border-gray-200 hover:bg-gray-100' : 'bg-blue-50/80 border-blue-200/50 hover:bg-blue-100'}`}>
             <div className={`w-2 h-2 rounded-full ${localAIOffline ? 'bg-gray-400' : 'bg-blue-500 shadow-accent-glow'}`}></div>
             <span className={`text-[11px] font-bold tracking-wide uppercase ${localAIOffline ? 'text-gray-500' : 'text-blue-600'}`}>
-              {localAIOffline ? 'Local AI Offline' : 'Local AI Ready'}
+              {localAIOffline ? 'Check Local AI' : 'Local AI Ready'}
             </span>
-          </div>
+          </button>
 
           <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50/80 border border-emerald-100/50 mr-2">
             <div className="w-1.5 h-1.5 rounded-full bg-status-up animate-pulse"></div>
