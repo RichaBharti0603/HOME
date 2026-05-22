@@ -32,14 +32,6 @@ settings = get_settings()
 
 from fastapi.responses import JSONResponse
 
-@app.exception_handler(Exception)
-async def global_exception_handler(request, exc):
-    logger.error(f"CRASH: {str(exc)}")
-    return JSONResponse(
-        status_code=500,
-        content={"error": str(exc)},
-    )
-
 # ============================================
 # Lifespan
 # ============================================
@@ -89,6 +81,17 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+# Fix: Register exception handlers AFTER the FastAPI app instance is created.
+# Previously, this was above the `app = FastAPI(...)` assignment, causing it 
+# to try and add a handler to the `app` module (from `import app.models...`).
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    logger.error(f"CRASH: {str(exc)}")
+    return JSONResponse(
+        status_code=500,
+        content={"error": str(exc)},
+    )
 
 app.add_middleware(
     CORSMiddleware,
