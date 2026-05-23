@@ -16,6 +16,7 @@ const Navbar = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    sessionStorage.clear();
     window.location.href = '/login';
   };
 

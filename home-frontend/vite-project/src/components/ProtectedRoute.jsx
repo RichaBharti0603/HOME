@@ -35,6 +35,7 @@ const ProtectedRoute = ({ children }) => {
         }
       } catch (err) {
         localStorage.removeItem('token');
+        sessionStorage.clear();
       } finally {
         setLoading(false);
       }

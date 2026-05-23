@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Lock, Zap } from 'lucide-react';
 import api, { requestWithRetry } from '../utils/api';
@@ -13,6 +13,15 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setFormData({
+      username: '',
+      email: '',
+      password: '',
+      confirmPassword: ''
+    });
+  }, []);
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -69,6 +78,7 @@ const Register = () => {
                     placeholder="Jane Doe"
                     value={formData.username}
                     onChange={(e) => setFormData({...formData, username: e.target.value})}
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -84,6 +94,7 @@ const Register = () => {
                     placeholder="jane@company.com"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -99,6 +110,7 @@ const Register = () => {
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    autoComplete="new-password"
                   />
                 </div>
               </div>
@@ -114,6 +126,7 @@ const Register = () => {
                     placeholder="••••••••"
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                    autoComplete="new-password"
                   />
                 </div>
               </div>
