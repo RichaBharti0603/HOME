@@ -14,6 +14,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.concurrency import run_in_threadpool
 import time
+from datetime import datetime
 
 @router.post("/register", response_model=UserResponse)
 async def register(user_in: UserCreate, db: Session = Depends(get_db)):
@@ -46,8 +47,9 @@ async def register(user_in: UserCreate, db: Session = Depends(get_db)):
             owner_user_id=db_user.id,
             company_name=user_in.email.split("@")[0],
             subscription_plan="starter",
-            payment_status="pending",
+            payment_status="trial",
             onboarding_complete=False,
+            trial_ends_at=datetime.utcnow() + timedelta(days=7)
         )
         db.add(tenant)
         db.commit()

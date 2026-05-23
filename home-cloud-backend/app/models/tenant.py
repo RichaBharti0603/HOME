@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from app.database import Base
+from datetime import datetime
 
 class Tenant(Base):
     __tablename__ = "tenants"
@@ -12,6 +13,7 @@ class Tenant(Base):
     payment_status = Column(String, default="pending") # pending, active, past_due, canceled
     stripe_customer_id = Column(String, nullable=True)
     onboarding_complete = Column(Boolean, default=False)
+    trial_ends_at = Column(DateTime, nullable=True)
 
     # Relationships
     owner = relationship("User", foreign_keys=[owner_user_id])

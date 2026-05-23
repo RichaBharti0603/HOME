@@ -27,6 +27,17 @@ const Dashboard = () => {
 
   const fetchMonitors = async () => {
     try {
+      const bootstrap = sessionStorage.getItem('home.dashboard.bootstrap');
+      if (bootstrap) {
+        const parsed = JSON.parse(bootstrap);
+        if (parsed?.monitors?.length) {
+          setMonitors(parsed.monitors);
+          sessionStorage.removeItem('home.dashboard.bootstrap');
+          setLoading(false);
+          return;
+        }
+      }
+
       if (localStorage.getItem('token') === 'demo-token') {
         setMonitors([
           { id: 1, project_name: 'Main Website', url: 'https://home.ai', status: 'UP', last_response_time: 120 },
@@ -89,9 +100,9 @@ const Dashboard = () => {
 
   const stats = {
     total: monitors.length,
-    up: monitors.filter(m => m.status === 'UP').length,
-    down: monitors.filter(m => m.status === 'DOWN').length,
-    uptimePercent: monitors.length ? Math.round((monitors.filter(m => m.status === 'UP').length / monitors.length) * 100) : 0,
+    up: monitors.filter(m => `${m.status}`.toUpperCase() === 'UP').length,
+    down: monitors.filter(m => `${m.status}`.toUpperCase() === 'DOWN').length,
+    uptimePercent: monitors.length ? Math.round((monitors.filter(m => `${m.status}`.toUpperCase() === 'UP').length / monitors.length) * 100) : 0,
     avgLatency: monitors.length ? Math.round(monitors.reduce((acc, m) => acc + (m.last_response_time || 0), 0) / monitors.length) : 0
   };
 
@@ -114,7 +125,7 @@ const Dashboard = () => {
         <div className="space-y-6 flex flex-col justify-between">
           <div>
             <h1 className="text-4xl font-extrabold text-foreground tracking-tight mb-2">Workspace</h1>
-            <p className="text-muted font-medium text-sm">H.O.M.E active monitoring and telemetry pipeline.</p>
+            <p className="text-muted font-medium text-sm">Your websites, current status, and recent activity.</p>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
@@ -122,7 +133,7 @@ const Dashboard = () => {
               <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center mb-4">
                 <Globe size={20} />
               </div>
-              <p className="text-xs font-bold text-muted uppercase tracking-wider mb-1">Endpoints</p>
+              <p className="text-xs font-bold text-muted uppercase tracking-wider mb-1">Websites</p>
               <h3 className="text-2xl font-extrabold text-foreground">{stats.total}</h3>
             </div>
             <div className="bento-card p-5 border-l-4 border-l-emerald-500">
@@ -147,7 +158,7 @@ const Dashboard = () => {
           </div>
           
           <div className="relative z-10 text-center space-y-2 mt-4">
-            <p className="text-sm font-bold text-muted uppercase tracking-widest">System Availability</p>
+            <p className="text-sm font-bold text-muted uppercase tracking-widest">Website Availability</p>
             <div className="flex items-baseline justify-center gap-2">
               <h1 className="text-7xl font-black text-foreground tracking-tighter" style={{ fontFeatureSettings: '"tnum"' }}>
                 {stats.uptimePercent}
@@ -180,7 +191,7 @@ const Dashboard = () => {
               <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center">
                 <Activity size={18} />
               </div>
-              <h3 className="text-base font-bold text-foreground">Global Latency</h3>
+              <h3 className="text-base font-bold text-foreground">Performance Trends</h3>
             </div>
             <div className="flex gap-1.5 bg-gray-50 p-1 rounded-lg border border-gray-100">
                {['5m', '1h', '24h'].map(t => (
@@ -228,7 +239,7 @@ const Dashboard = () => {
              ) : (
                <div className="text-center space-y-3 pb-6">
                  <BrainCircuit size={32} className="mx-auto text-indigo-200" />
-                 <p className="text-xs text-muted font-medium px-4">I am monitoring your endpoints. Ask me anything about your system's health.</p>
+                 <p className="text-xs text-muted font-medium px-4">I am watching your websites. Ask me anything about their health.</p>
                </div>
              )}
           </div>
@@ -254,12 +265,26 @@ const Dashboard = () => {
         {/* Endpoints List */}
         <div className="lg:col-span-2 bento-card">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-base font-bold text-foreground">Active Endpoints</h3>
-            <button onClick={() => navigate('/control-center')} className="text-xs font-bold text-accent-primary hover:underline">Manage All</button>
-          </div>
+          <h3 className="text-base font-bold text-foreground">Active Monitors</h3>
+          <button onClick={() => navigate('/control-center')} className="text-xs font-bold text-accent-primary hover:underline">Manage All</button>
+        </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <AnimatePresence>
+              {monitors.length === 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="md:col-span-2 rounded-2xl border border-dashed border-blue-200 bg-blue-50/60 p-8 text-center"
+                >
+                  <ShieldCheck size={34} className="mx-auto text-blue-500" />
+                  <h4 className="mt-4 text-lg font-extrabold text-foreground">No websites are being watched yet.</h4>
+                  <p className="mx-auto mt-2 max-w-md text-sm font-medium text-muted">Start with one website and H.O.M.E will create the monitor for you.</p>
+                  <button onClick={() => navigate('/setup')} className="premium-button mx-auto mt-5">
+                    Start setup <ArrowUpRight size={16} />
+                  </button>
+                </motion.div>
+              )}
               {monitors.map((m) => (
                 <motion.div 
                   key={m.id}
@@ -269,15 +294,19 @@ const Dashboard = () => {
                   className="p-4 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-floating bg-white transition-all cursor-pointer group flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-2.5 h-2.5 rounded-full ${m.status === 'UP' ? 'bg-emerald-500 shadow-[0_0_8px_#10B981]' : 'bg-red-500 shadow-[0_0_8px_#EF4444] animate-pulse'}`}></div>
+                    <div className={`w-2.5 h-2.5 rounded-full ${`${m.status}`.toUpperCase() === 'UP' ? 'bg-emerald-500 shadow-[0_0_8px_#10B981]' : `${m.status}`.toUpperCase() === 'DOWN' ? 'bg-red-500 shadow-[0_0_8px_#EF4444] animate-pulse' : 'bg-amber-400 shadow-[0_0_8px_#F59E0B]'}`}></div>
                     <div>
                       <h4 className="font-bold text-foreground group-hover:text-accent-primary transition-colors">{m.project_name}</h4>
                       <p className="text-xs text-muted font-medium">{m.url}</p>
+                      <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-muted">
+                        Last checked {m.last_checked ? new Date(m.last_checked).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'soon'}
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-bold text-foreground font-mono">{m.last_response_time ? `${m.last_response_time}ms` : '--'}</p>
-                    <p className="text-[10px] font-bold text-muted uppercase tracking-wider mt-0.5">Latency</p>
+                    <p className="text-[10px] font-bold text-muted uppercase tracking-wider mt-0.5">Response</p>
+                    <p className="mt-2 text-[10px] font-bold text-red-500">{m.active_incidents ? `${m.active_incidents} active` : 'No incidents'}</p>
                   </div>
                 </motion.div>
               ))}

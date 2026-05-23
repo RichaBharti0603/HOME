@@ -9,12 +9,14 @@ import app.models.user
 import app.models.monitor
 import app.models.log
 import app.models.alert
+import app.models.incident
 import app.models.tenant
 import app.models.billing
+import app.models.onboarding
 from app.core.system_guard import RedisHealthGuard
 
 # Routers
-from app.routes import auth, monitor as monitor_route, alert, ai, health, billing, engine as engine_route
+from app.routes import auth, monitor as monitor_route, alert, ai, health, billing, engine as engine_route, onboarding
 
 # ============================================
 # Logging
@@ -143,6 +145,7 @@ app.include_router(alert.router)
 app.include_router(health.router)
 app.include_router(billing.router)
 app.include_router(engine_route.router)
+app.include_router(onboarding.router)
 from fastapi import WebSocket, WebSocketDisconnect
 from app.utils.websocket_manager import manager
 

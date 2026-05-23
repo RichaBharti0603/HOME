@@ -24,7 +24,8 @@ const ProtectedRoute = ({ children }) => {
     const checkStatus = async () => {
       try {
         const res = await api.get('/auth/users/me');
-        if (res.data.onboarding_complete && res.data.payment_status === 'active') {
+        const paidOrTrial = ['active', 'trial', 'pending'].includes(res.data.payment_status);
+        if (res.data.onboarding_complete && paidOrTrial) {
           setIsAllowed(true);
         } else {
           if (location.pathname === '/setup') {
