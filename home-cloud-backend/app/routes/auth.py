@@ -11,6 +11,7 @@ from app.utils.security import get_password_hash, verify_password, create_access
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.concurrency import run_in_threadpool
 import time
 
@@ -65,9 +66,9 @@ async def register(user_in: UserCreate, db: Session = Depends(get_db)):
         raise e
 
 @router.post("/login", response_model=Token)
-async def login(user_in: UserLogin, db: Session = Depends(get_db)):
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     start_time = time.time()
-    user = db.query(User).filter(User.email == user_in.email).first()
+    user = db.query(User).filter(User.email == form_data.username).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -76,7 +77,7 @@ async def login(user_in: UserLogin, db: Session = Depends(get_db)):
         )
     
     # Phase 1: Non-blocking password verification
-    is_valid = await run_in_threadpool(verify_password, user_in.password, user.password)
+    is_valid = await run_in_threadpool(verify_password, form_data.password, user.password)
     if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

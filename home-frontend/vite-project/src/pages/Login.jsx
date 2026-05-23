@@ -27,7 +27,15 @@ const Login = () => {
     }
 
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const formData = new URLSearchParams();
+      formData.append("username", email);
+      formData.append("password", password);
+
+      const response = await api.post('/auth/login', formData, {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
       localStorage.setItem('token', response.data.access_token);
       navigate('/dashboard');
     } catch (err) {

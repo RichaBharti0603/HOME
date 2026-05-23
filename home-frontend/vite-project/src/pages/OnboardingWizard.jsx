@@ -31,7 +31,7 @@ const OnboardingWizard = () => {
 
   useEffect(() => {
     // Check if user already completed onboarding
-    api.get('/users/me').then(res => {
+    api.get('/auth/users/me').then(res => {
       if (res.data.onboarding_complete && res.data.payment_status === 'active') {
         navigate('/dashboard');
       }

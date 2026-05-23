@@ -23,7 +23,7 @@ const ProtectedRoute = ({ children }) => {
 
     const checkStatus = async () => {
       try {
-        const res = await api.get('/users/me');
+        const res = await api.get('/auth/users/me');
         if (res.data.onboarding_complete && res.data.payment_status === 'active') {
           setIsAllowed(true);
         } else {
