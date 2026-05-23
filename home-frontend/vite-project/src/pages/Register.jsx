@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Mail, Lock, Zap } from 'lucide-react';
-import api, { requestWithRetry } from '../utils/api';
+import { User, Mail, Lock } from 'lucide-react';
+import api from '../utils/api';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -32,11 +32,12 @@ const Register = () => {
     setLoading(true);
     setError('');
     try {
-      console.log("Attempting to register with:", formData.email);
-      const response = await requestWithRetry(() => api.post('/auth/register', {
-        email: formData.email,
+      const payload = {
+        email: formData.email.trim().toLowerCase(),
         password: formData.password
-      }));
+      };
+      console.log("REGISTER PAYLOAD:", { email: payload.email, password: '[hidden]' });
+      const response = await api.post('/auth/register', payload);
       console.log("Registration successful:", response.data);
       // Immediate redirect without blocking alert
       navigate('/login', { state: { message: 'Account created successfully! Please log in.' } });

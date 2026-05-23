@@ -1,10 +1,15 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 class UserBase(BaseModel):
     email: EmailStr
 
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: EmailStr) -> str:
+        return str(value).lower().strip()
+
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(min_length=6, max_length=128)
 
 class UserLogin(UserBase):
     password: str

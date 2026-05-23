@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Response, Request
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.scheduler import start_scheduler
 from app.config import get_settings
@@ -97,26 +97,15 @@ async def global_exception_handler(request, exc):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://home-frontend-fjvl.onrender.com"],
+    allow_origins=[
+        "https://home-frontend-fjvl.onrender.com",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-from starlette.middleware.base import BaseHTTPMiddleware
-
-class ForceCORSMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        response = await call_next(request)
-        response.headers["Access-Control-Allow-Origin"] = "https://home-frontend-fjvl.onrender.com"
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "*"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        return response
-
-app.add_middleware(ForceCORSMiddleware)
-
-
 
 @app.options("/{full_path:path}")
 async def preflight_handler(request: Request):

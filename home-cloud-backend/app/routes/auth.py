@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from loguru import logger
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from datetime import timedelta
 
@@ -18,16 +19,17 @@ from datetime import datetime
 
 @router.post("/register", response_model=UserResponse)
 async def register(user_in: UserCreate, db: Session = Depends(get_db)):
-    print("REGISTER HIT:", user_in.dict())
+    normalized_email = user_in.email.lower().strip()
+    print("REGISTER HIT:", {"email": normalized_email})
     start_time = time.time()
     
     try:
         # Check if user exists
-        user = db.query(User).filter(User.email == user_in.email).first()
+        user = db.query(User).filter(func.lower(User.email) == normalized_email).first()
         if user:
             raise HTTPException(
                 status_code=400,
-                detail="The user with this email already exists in the system."
+                detail="Email already registered"
             )
         
         # Phase 1: Non-blocking password hashing
@@ -35,7 +37,7 @@ async def register(user_in: UserCreate, db: Session = Depends(get_db)):
         
         # Create new user
         db_user = User(
-            email=user_in.email,
+            email=normalized_email,
             password=hashed_password,
         )
         db.add(db_user)
@@ -45,7 +47,7 @@ async def register(user_in: UserCreate, db: Session = Depends(get_db)):
         # Phase 1: Keep tenant creation simple and fast
         tenant = Tenant(
             owner_user_id=db_user.id,
-            company_name=user_in.email.split("@")[0],
+            company_name=normalized_email.split("@")[0],
             subscription_plan="starter",
             payment_status="trial",
             onboarding_complete=False,
@@ -61,7 +63,11 @@ async def register(user_in: UserCreate, db: Session = Depends(get_db)):
         
         logger.info(f"/register took {time.time() - start_time:.4f}s")
         return db_user
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
+        db.rollback()
         print("REGISTER ERROR:", str(e))
         # Log to loguru as well for cloud visibility
         logger.error(f"REGISTER ERROR: {str(e)}")
