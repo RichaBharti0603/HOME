@@ -63,7 +63,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: VITE_API_URL
-        value: "https://home-backend.onrender.com"
+        value: "https://home-dpl4.onrender.com"
 
   # 4. Redis
   - type: redis

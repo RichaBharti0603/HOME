@@ -21,6 +21,7 @@ const Register = () => {
       password: '',
       confirmPassword: ''
     });
+    setError('');
   }, []);
 
   const handleRegister = async (e) => {
@@ -80,6 +81,7 @@ const Register = () => {
                     value={formData.username}
                     onChange={(e) => setFormData({...formData, username: e.target.value})}
                     autoComplete="off"
+                    name="home-register-name"
                   />
                 </div>
               </div>
@@ -96,6 +98,7 @@ const Register = () => {
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                     autoComplete="off"
+                    name="home-register-email"
                   />
                 </div>
               </div>
@@ -112,6 +115,7 @@ const Register = () => {
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                     autoComplete="new-password"
+                    name="home-register-password"
                   />
                 </div>
               </div>
@@ -128,6 +132,7 @@ const Register = () => {
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
                     autoComplete="new-password"
+                    name="home-register-confirm-password"
                   />
                 </div>
               </div>

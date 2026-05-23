@@ -15,6 +15,7 @@ const Login = () => {
   useEffect(() => {
     setEmail('');
     setPassword('');
+    setError('');
   }, []);
 
   const handleLogin = async (e) => {
@@ -33,7 +34,7 @@ const Login = () => {
 
     try {
       const formData = new URLSearchParams();
-      formData.append("username", email);
+      formData.append("username", email.trim().toLowerCase());
       formData.append("password", password);
 
       const response = await api.post('/auth/login', formData, {
@@ -81,6 +82,7 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="off"
+                  name="home-login-email"
                 />
               </div>
             </div>
@@ -99,7 +101,8 @@ const Login = () => {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
+                  autoComplete="new-password"
+                  name="home-login-password"
                 />
               </div>
             </div>
