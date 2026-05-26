@@ -9,9 +9,7 @@ import {
   ResponsiveContainer, AreaChart, Area 
 } from 'recharts';
 import { motion } from 'framer-motion';
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import api from '../utils/api';
 
 export default function EngineeringView() {
   const [stats, setStats] = useState(null);
@@ -21,11 +19,8 @@ export default function EngineeringView() {
 
   const fetchEngineData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-      
-      const statsRes = await axios.get(`${API_BASE_URL}/engine/stats`, { headers });
-      const logsRes = await axios.get(`${API_BASE_URL}/engine/logs`, { headers });
+      const statsRes = await api.get('/engine/stats');
+      const logsRes = await api.get('/engine/logs');
       
       setStats(statsRes.data);
       setLogs(logsRes.data);

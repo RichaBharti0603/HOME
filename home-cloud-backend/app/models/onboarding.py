@@ -68,6 +68,7 @@ class NotificationSettings(Base):
     notify_dashboard = Column(Boolean, default=True)
     alert_email = Column(String, nullable=True)
     weekly_reports = Column(Boolean, default=False)
+    whatsapp_number = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

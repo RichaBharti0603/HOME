@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+export const WS_BASE_URL = API_BASE_URL.replace(/^http/, 'ws');
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000',
+  baseURL: API_BASE_URL,
   timeout: 60000, // 60 seconds to handle extreme cold starts
   headers: {
     'Content-Type': 'application/json',
@@ -20,13 +23,18 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-export const requestWithRetry = async (fn, retries = 2) => {
+export const requestWithRetry = async (fn, retries = 5, delay = 2000, onRetry = null) => {
   try {
     return await fn();
   } catch (err) {
-    if (retries > 0 && (!err.response || err.response.status >= 500)) {
-      console.log(`Retrying request... (${retries} left)`);
-      return requestWithRetry(fn, retries - 1);
+    const isNetworkOrServerError = !err.response || err.response.status >= 500 || err.response.status === 408;
+    if (retries > 0 && isNetworkOrServerError) {
+      console.log(`Connection retry triggered. Retrying in ${delay}ms... (${retries} left)`);
+      if (onRetry) {
+        onRetry(retries, delay);
+      }
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return requestWithRetry(fn, retries - 1, delay * 2, onRetry);
     }
     throw err;
   }

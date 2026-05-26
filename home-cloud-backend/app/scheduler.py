@@ -95,6 +95,7 @@ def start_scheduler():
     )
     scheduler.start()
     
-    # Run an immediate sync on startup
-    SchedulerOrchestrator.sync_monitors()
+    # Run an immediate sync on startup in a background thread to prevent cold start blocking
+    import threading
+    threading.Thread(target=SchedulerOrchestrator.sync_monitors, daemon=True).start()
     logger.info("Advanced Scheduler started (Dynamic Per-Monitor Resolution)")

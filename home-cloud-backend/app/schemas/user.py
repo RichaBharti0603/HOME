@@ -3,6 +3,13 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 class UserBase(BaseModel):
     email: EmailStr
 
+    @field_validator("email", mode="before")
+    @classmethod
+    def clean_email(cls, value):
+        if isinstance(value, str):
+            return value.strip().lower()
+        return value
+
     @field_validator("email")
     @classmethod
     def normalize_email(cls, value: EmailStr) -> str:

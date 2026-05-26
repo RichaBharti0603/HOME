@@ -6,7 +6,7 @@ import {
   ShieldCheck, AlertTriangle, BarChart3,
   History, Calendar, Network, ShieldAlert, KeyRound, Cpu, Lock, CalendarDays
 } from 'lucide-react';
-import api from '../utils/api';
+import api, { WS_BASE_URL } from '../utils/api';
 import { format } from 'date-fns';
 import { 
   AreaChart, Area, XAxis, YAxis, 
@@ -55,10 +55,7 @@ const MonitorDetail = () => {
     
     if (localStorage.getItem('token') === 'demo-token') return;
 
-    const apiBaseUrl = import.meta.env.VITE_API_URL || 'localhost:8000';
-    const host = apiBaseUrl.replace(/^https?:\/\//, '');
-    const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
-    const wsUrl = `${wsProtocol}://${host}/ws?monitor_id=${id}`;
+    const wsUrl = `${WS_BASE_URL}/ws?monitor_id=${id}`;
 
     let socket;
     try {

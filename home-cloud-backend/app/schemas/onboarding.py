@@ -9,6 +9,8 @@ class OnboardingSetupRequest(BaseModel):
     notify_dashboard: bool = True
     alert_email: Optional[EmailStr] = None
     weekly_reports: bool = False
+    frequency: Optional[str] = Field(default="60s", max_length=20)
+    whatsapp_number: Optional[str] = Field(default=None, max_length=30)
 
     @field_validator("url")
     @classmethod
@@ -21,17 +23,15 @@ class OnboardingSetupRequest(BaseModel):
     @field_validator("website_type")
     @classmethod
     def validate_website_type(cls, value: str) -> str:
-        allowed = {
-            "Personal Portfolio",
-            "Business Website",
-            "Online Store",
-            "Blog",
-            "SaaS App",
-            "School/College Project",
-            "Other",
-        }
-        if value not in allowed:
-            raise ValueError("Please choose a website type from the list.")
+        # Relax validator to accept any string and specifically allow setup options
+        return value.strip()
+
+    @field_validator("alert_email", mode="before")
+    @classmethod
+    def clean_alert_email(cls, value):
+        if isinstance(value, str):
+            cleaned = value.strip().lower()
+            return cleaned if cleaned else None
         return value
 
 
@@ -64,3 +64,5 @@ class OnboardingStatusResponse(BaseModel):
     alert_email: Optional[str] = None
     weekly_reports: bool = False
     created_monitor_ids: List[int] = Field(default_factory=list)
+    whatsapp_number: Optional[str] = None
+

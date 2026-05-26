@@ -41,7 +41,7 @@ def create_celery_app() -> Celery:
         # Retry policy: if the broker is temporarily down,
         # Celery will retry the connection up to 5 times
         broker_connection_retry_on_startup=True,
-        broker_connection_max_retries=5,
+        broker_connection_max_retries=None,
 
         # Worker settings
         worker_prefetch_multiplier=1,    # Each worker takes 1 task at a time

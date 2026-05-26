@@ -47,4 +47,5 @@ def get_status(db: Session = Depends(get_db), current_user: User = Depends(get_c
         alert_email=notifications.alert_email if notifications else current_user.email,
         weekly_reports=notifications.weekly_reports if notifications else False,
         created_monitor_ids=onboarding.created_monitor_ids if onboarding and onboarding.created_monitor_ids else [],
+        whatsapp_number=getattr(notifications, "whatsapp_number", None) if notifications else None,
     )

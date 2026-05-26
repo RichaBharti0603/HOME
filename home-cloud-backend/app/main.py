@@ -14,8 +14,43 @@ import app.models.tenant
 import app.models.billing
 import app.models.onboarding
 from app.core.system_guard import RedisHealthGuard
+from app.database import get_db
+from app.utils.security import get_current_user
+from sqlalchemy.orm import Session
+from fastapi import Depends
+from app.models.user import User
 
+def run_dynamic_migrations():
+    from sqlalchemy import text
+    logger.info("Running dynamic migrations check...")
+    try:
+        with engine.connect() as conn:
+            db_name = engine.url.drivername
+            column_exists = False
+            if "sqlite" in db_name:
+                cursor = conn.execute(text("PRAGMA table_info(notification_settings)"))
+                cols = [row[1] for row in cursor.fetchall()]
+                column_exists = "whatsapp_number" in cols
+            else:
+                cursor = conn.execute(text(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_name='notification_settings' AND column_name='whatsapp_number'"
+                ))
+                column_exists = cursor.fetchone() is not None
+            
+            if not column_exists:
+                logger.info("Adding whatsapp_number column to notification_settings table...")
+                conn.execute(text("ALTER TABLE notification_settings ADD COLUMN whatsapp_number VARCHAR(80)"))
+                conn.commit()
+                logger.info("whatsapp_number column added successfully")
+            else:
+                logger.info("whatsapp_number column already exists")
+    except Exception as e:
+        logger.error(f"Dynamic migration failed: {e}")
+
+# ============================================
 # Routers
+# ============================================
 from app.routes import auth, monitor as monitor_route, alert, ai, health, billing, engine as engine_route, onboarding
 
 # ============================================
@@ -45,14 +80,20 @@ async def lifespan(app: FastAPI):
         # Ensure database tables are created
         Base.metadata.create_all(bind=engine)
         logger.info("Database migration check completed successfully")
+        
+        # Run dynamic migration check
+        run_dynamic_migrations()
     except Exception as e:
         logger.error(f"Failed to database operations: {e}")
 
     try:
-        # Phase 5: Disable Redis temporarily for debugging
-        # RedisHealthGuard.ping_and_verify()
-        # logger.info(f"Redis Status: {'Available' if RedisHealthGuard.is_available else 'Unavailable'}")
-        logger.warning("Redis checks temporarily DISABLED for debugging")
+        # Run RedisHealthGuard ping verification in background thread to prevent cold start blocking
+        import threading
+        def verify_redis():
+            RedisHealthGuard.ping_and_verify()
+            logger.info(f"Redis Status verified in background thread: {'Available' if RedisHealthGuard.is_available else 'Unavailable'}")
+        
+        threading.Thread(target=verify_redis, daemon=True).start()
         
         # Phase 2: Conditional Scheduler
         import os
@@ -99,7 +140,17 @@ origins = [
     "https://home-frontend-fjvl.onrender.com",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
+
+# Proactively include dynamic frontend_url from settings
+if settings.frontend_url:
+    clean_frontend_url = settings.frontend_url.rstrip("/")
+    if clean_frontend_url not in origins:
+        origins.append(clean_frontend_url)
 
 app.add_middleware(
     CORSMiddleware,
@@ -141,8 +192,32 @@ app.include_router(ai.router)
 # ============================================
 # Endpoints
 # ============================================
+@app.get("/users/me", tags=["Auth"])
+def get_me_direct(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    tenant = current_user.tenant
+    return {
+        "id": current_user.id,
+        "email": current_user.email,
+        "tenant_id": current_user.tenant_id,
+        "onboarding_complete": tenant.onboarding_complete if tenant else False,
+        "subscription_plan": tenant.subscription_plan if tenant else "none",
+        "payment_status": tenant.payment_status if tenant else "none"
+    }
+
+from app.schemas.user import UserCreate
+
+@app.post("/register", tags=["Auth"])
+async def register_direct(user_in: UserCreate, db: Session = Depends(get_db)):
+    from app.routes.auth import register
+    return await register(user_in, db)
+
+@app.post("/login", tags=["Auth"])
+async def login_direct(request: Request, db: Session = Depends(get_db)):
+    from app.routes.auth import login
+    return await login(request, db)
+
 @app.get("/health")
-async def health():
+async def get_health():
     return {"status": "ok"}
 
 @app.get("/test", tags=["System"])

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Lock } from 'lucide-react';
-import api from '../utils/api';
+import api, { requestWithRetry } from '../utils/api';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -32,7 +32,15 @@ const Register = () => {
         confirmPassword: ''
       });
     }, 0);
-    return () => window.clearTimeout(resetTimer);
+    return () => {
+      window.clearTimeout(resetTimer);
+      setFormData({
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
+      });
+    };
   }, []);
 
   const handleRegister = async (e) => {
@@ -49,14 +57,23 @@ const Register = () => {
         password: formData.password
       };
       console.log("REGISTER PAYLOAD:", { email: payload.email, password: '[hidden]' });
-      const response = await api.post('/auth/register', payload);
+      
+      const response = await requestWithRetry(
+        () => api.post('/auth/register', payload),
+        5,
+        2000,
+        (retriesLeft, nextDelay) => {
+          setError(`Connecting to server... Server is starting up (cold start). Retrying in ${nextDelay / 1000}s...`);
+        }
+      );
+      
       console.log("Registration successful:", response.data);
       // Immediate redirect without blocking alert
       navigate('/login', { state: { message: 'Account created successfully! Please log in.' } });
     } catch (err) {
       console.error("Registration error:", err);
       if (!err.response) {
-        setError('Network Error: Cannot reach the server. Please check your internet connection or VITE_API_URL.');
+        setError('Network Error: Cannot reach the server. The server is taking too long to start. Please try again in a few moments.');
       } else {
         setError(err.response.data?.detail || 'Registration failed. Email may already be registered.');
       }

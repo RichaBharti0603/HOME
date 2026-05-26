@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Mail, Lock, Shield, Activity, Zap, CheckCircle2 } from 'lucide-react';
-import api from '../utils/api';
+import api, { requestWithRetry } from '../utils/api';
 
 const Login = () => {
   const location = useLocation();
@@ -22,7 +22,11 @@ const Login = () => {
       setEmail('');
       setPassword('');
     }, 0);
-    return () => window.clearTimeout(resetTimer);
+    return () => {
+      window.clearTimeout(resetTimer);
+      setEmail('');
+      setPassword('');
+    };
   }, []);
 
   const handleLogin = async (e) => {
@@ -34,7 +38,7 @@ const Login = () => {
     if (email === 'demo@home.ai' && password === 'Demo@123') {
       setTimeout(() => {
         localStorage.setItem('token', 'demo-token');
-        navigate('/dashboard');
+        navigate('/setup');
       }, 800);
       return;
     }
@@ -45,11 +49,25 @@ const Login = () => {
         password,
       };
       console.log('LOGIN PAYLOAD:', { email: payload.email, password: '[hidden]' });
-      const response = await api.post('/auth/login', payload);
+      
+      const response = await requestWithRetry(
+        () => api.post('/auth/login', payload),
+        5,
+        2000,
+        (retriesLeft, nextDelay) => {
+          setError(`Connecting to server... Server is starting up (cold start). Retrying in ${nextDelay / 1000}s...`);
+        }
+      );
+      
       localStorage.setItem('token', response.data.access_token);
-      navigate('/dashboard');
+      navigate('/setup');
     } catch (err) {
-      setError('Invalid email or password. Please try again.');
+      console.error('Login error:', err);
+      if (!err.response) {
+        setError('Connection failed. The server is taking too long to start. Please try again in a few moments.');
+      } else {
+        setError(err.response.data?.detail || 'Invalid email or password. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

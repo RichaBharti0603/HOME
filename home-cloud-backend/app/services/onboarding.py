@@ -125,6 +125,7 @@ def complete_onboarding(db: Session, user: User, data: OnboardingSetupRequest) -
     onboarding.notification_settings.notify_dashboard = data.notify_dashboard
     onboarding.notification_settings.alert_email = data.alert_email or user.email
     onboarding.notification_settings.weekly_reports = data.weekly_reports
+    onboarding.notification_settings.whatsapp_number = data.whatsapp_number
 
     monitor = existing_monitor
     if not monitor:
@@ -134,12 +135,13 @@ def complete_onboarding(db: Session, user: User, data: OnboardingSetupRequest) -
         if data.notify_email:
             channels.append("email")
 
+        frequency_val = data.frequency if data.frequency else "60s"
         monitor = Monitor(
             tenant_id=tenant.id,
             user_id=user.id,
             project_name=website_name[:160],
             url=normalized_url,
-            frequency="60s",
+            frequency=frequency_val,
             monitor_type="HTTP",
             check_types=["HTTP", "SSL", "PERFORMANCE", "INCIDENTS"],
             expected_status=200,
