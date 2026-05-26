@@ -95,21 +95,19 @@ async def global_exception_handler(request, exc):
         content={"error": str(exc)},
     )
 
+origins = [
+    "https://home-frontend-fjvl.onrender.com",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://home-frontend-fjvl.onrender.com",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.options("/{full_path:path}")
-async def preflight_handler(request: Request):
-    return {}
 
 # Phase 5: Logging Middleware (including Origin tracking)
 import time
@@ -143,9 +141,9 @@ app.include_router(ai.router)
 # ============================================
 # Endpoints
 # ============================================
-@app.get("/health", tags=["System"])
-async def health_check():
-    return {"status": "ok", "app": settings.app_name}
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
 
 @app.get("/test", tags=["System"])
 async def test_check():

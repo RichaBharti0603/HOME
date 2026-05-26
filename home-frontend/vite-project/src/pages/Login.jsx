@@ -13,9 +13,16 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    window.history.replaceState(null, '', window.location.href);
+    localStorage.removeItem('auth-storage');
     setEmail('');
     setPassword('');
     setError('');
+    const resetTimer = window.setTimeout(() => {
+      setEmail('');
+      setPassword('');
+    }, 0);
+    return () => window.clearTimeout(resetTimer);
   }, []);
 
   const handleLogin = async (e) => {
@@ -33,15 +40,12 @@ const Login = () => {
     }
 
     try {
-      const formData = new URLSearchParams();
-      formData.append("username", email.trim().toLowerCase());
-      formData.append("password", password);
-
-      const response = await api.post('/auth/login', formData, {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      });
+      const payload = {
+        email: email.trim().toLowerCase(),
+        password,
+      };
+      console.log('LOGIN PAYLOAD:', { email: payload.email, password: '[hidden]' });
+      const response = await api.post('/auth/login', payload);
       localStorage.setItem('token', response.data.access_token);
       navigate('/dashboard');
     } catch (err) {
@@ -69,7 +73,7 @@ const Login = () => {
         </div>
 
         <div className="glass-card !p-8 bg-white border-gray-200 shadow-xl">
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-5" autoComplete="off">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-gray-700 ml-1">Email Address</label>
               <div className="relative">
@@ -83,6 +87,7 @@ const Login = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="off"
                   name="home-login-email"
+                  id="home-login-email"
                 />
               </div>
             </div>
@@ -103,6 +108,7 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="new-password"
                   name="home-login-password"
+                  id="home-login-password"
                 />
               </div>
             </div>

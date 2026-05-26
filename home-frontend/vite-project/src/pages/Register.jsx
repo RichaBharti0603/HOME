@@ -15,6 +15,8 @@ const Register = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    window.history.replaceState(null, '', window.location.href);
+    localStorage.removeItem('auth-storage');
     setFormData({
       username: '',
       email: '',
@@ -22,6 +24,15 @@ const Register = () => {
       confirmPassword: ''
     });
     setError('');
+    const resetTimer = window.setTimeout(() => {
+      setFormData({
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
+      });
+    }, 0);
+    return () => window.clearTimeout(resetTimer);
   }, []);
 
   const handleRegister = async (e) => {
@@ -68,7 +79,7 @@ const Register = () => {
           </div>
 
           <div className="glass-card !p-8 bg-white border-gray-200 shadow-xl">
-            <form onSubmit={handleRegister} className="space-y-5">
+            <form onSubmit={handleRegister} className="space-y-5" autoComplete="off">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-gray-700 ml-1">Full Name</label>
                 <div className="relative">
@@ -82,6 +93,7 @@ const Register = () => {
                     onChange={(e) => setFormData({...formData, username: e.target.value})}
                     autoComplete="off"
                     name="home-register-name"
+                    id="home-register-name"
                   />
                 </div>
               </div>
@@ -99,6 +111,7 @@ const Register = () => {
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                     autoComplete="off"
                     name="home-register-email"
+                    id="home-register-email"
                   />
                 </div>
               </div>
@@ -116,6 +129,7 @@ const Register = () => {
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                     autoComplete="new-password"
                     name="home-register-password"
+                    id="home-register-password"
                   />
                 </div>
               </div>
@@ -133,6 +147,7 @@ const Register = () => {
                     onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
                     autoComplete="new-password"
                     name="home-register-confirm-password"
+                    id="home-register-confirm-password"
                   />
                 </div>
               </div>

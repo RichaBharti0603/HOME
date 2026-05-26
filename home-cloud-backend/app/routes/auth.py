@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from loguru import logger
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -7,12 +7,11 @@ from datetime import timedelta
 from app.database import get_db
 from app.models.user import User
 from app.models.tenant import Tenant
-from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
+from app.schemas.user import UserCreate, UserResponse, Token
 from app.utils.security import get_password_hash, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.concurrency import run_in_threadpool
 import time
 from datetime import datetime
@@ -61,6 +60,7 @@ async def register(user_in: UserCreate, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(db_user)
         
+        logger.info(f"REGISTER CREATED user_id={db_user.id} email={db_user.email} tenant_id={db_user.tenant_id}")
         logger.info(f"/register took {time.time() - start_time:.4f}s")
         return db_user
     except HTTPException:
@@ -74,10 +74,31 @@ async def register(user_in: UserCreate, db: Session = Depends(get_db)):
         raise e
 
 @router.post("/login", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login(request: Request, db: Session = Depends(get_db)):
     start_time = time.time()
-    normalized_email = form_data.username.lower().strip()
+    content_type = request.headers.get("content-type", "")
+
+    if "application/json" in content_type:
+        payload = await request.json()
+        raw_email = payload.get("email") or payload.get("username")
+        raw_password = payload.get("password")
+    else:
+        form_data = await request.form()
+        raw_email = form_data.get("username") or form_data.get("email")
+        raw_password = form_data.get("password")
+
+    if not raw_email or not raw_password:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Login requires email and password.",
+        )
+
+    normalized_email = str(raw_email).lower().strip()
+    password = str(raw_password)
+    logger.info(f"LOGIN HIT email={normalized_email}")
+
     user = db.query(User).filter(func.lower(User.email) == normalized_email).first()
+    logger.info(f"LOGIN LOOKUP email={normalized_email} found={bool(user)}")
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -86,7 +107,17 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         )
     
     # Phase 1: Non-blocking password verification
-    is_valid = await run_in_threadpool(verify_password, form_data.password, user.password)
+    try:
+        is_valid = await run_in_threadpool(verify_password, password, user.password)
+    except Exception:
+        is_valid = False
+
+    # Compatibility for any old rows accidentally saved as plain text.
+    if not is_valid and user.password == password:
+        user.password = await run_in_threadpool(get_password_hash, password)
+        db.commit()
+        is_valid = True
+
     if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
