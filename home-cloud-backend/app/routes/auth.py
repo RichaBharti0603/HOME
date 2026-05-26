@@ -7,7 +7,9 @@ from datetime import timedelta
 from app.database import get_db
 from app.models.user import User
 from app.models.tenant import Tenant
-from app.schemas.user import UserCreate, UserResponse, Token
+from app.schemas.user import RegisterRequest, UserResponse, Token
+from app.utils.security import get_password_hash, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_current_user
+
 from app.utils.security import get_password_hash, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -17,26 +19,23 @@ import time
 from datetime import datetime
 
 @router.post("/register", response_model=UserResponse)
-async def register(user_in: UserCreate, db: Session = Depends(get_db)):
-    normalized_email = user_in.email.lower().strip()
-    print("REGISTER HIT:", {"email": normalized_email})
+async def register(user_in: RegisterRequest, db: Session = Depends(get_db)):
+    email = user_in.email.strip().lower()
+    print("REGISTER HIT:", {"email": email})
     start_time = time.time()
     
     try:
         # Check if user exists
-        user = db.query(User).filter(func.lower(User.email) == normalized_email).first()
-        if user:
-            raise HTTPException(
-                status_code=400,
-                detail="Email already registered"
-            )
+        existing = db.query(User).filter(User.email == email).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="User already exists")
         
         # Phase 1: Non-blocking password hashing
         hashed_password = await run_in_threadpool(get_password_hash, user_in.password)
         
         # Create new user
         db_user = User(
-            email=normalized_email,
+            email=email,
             password=hashed_password,
         )
         db.add(db_user)
@@ -46,7 +45,7 @@ async def register(user_in: UserCreate, db: Session = Depends(get_db)):
         # Phase 1: Keep tenant creation simple and fast
         tenant = Tenant(
             owner_user_id=db_user.id,
-            company_name=normalized_email.split("@")[0],
+            company_name=email.split("@")[0],
             subscription_plan="starter",
             payment_status="trial",
             onboarding_complete=False,
@@ -93,12 +92,12 @@ async def login(request: Request, db: Session = Depends(get_db)):
             detail="Login requires email and password.",
         )
 
-    normalized_email = str(raw_email).lower().strip()
+    email = str(raw_email).strip().lower()
     password = str(raw_password)
-    logger.info(f"LOGIN HIT email={normalized_email}")
+    logger.info(f"LOGIN HIT email={email}")
 
-    user = db.query(User).filter(func.lower(User.email) == normalized_email).first()
-    logger.info(f"LOGIN LOOKUP email={normalized_email} found={bool(user)}")
+    user = db.query(User).filter(User.email == email).first()
+    logger.info(f"LOGIN LOOKUP email={email} found={bool(user)}")
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -109,7 +108,8 @@ async def login(request: Request, db: Session = Depends(get_db)):
     # Phase 1: Non-blocking password verification
     try:
         is_valid = await run_in_threadpool(verify_password, password, user.password)
-    except Exception:
+    except Exception as e:
+        logger.error(f"Password verification exception: {e}")
         is_valid = False
 
     # Compatibility for any old rows accidentally saved as plain text.

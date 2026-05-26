@@ -144,7 +144,7 @@ const Register = () => {
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    autoComplete="new-password"
+                    autoComplete="off"
                     name="home-register-password"
                     id="home-register-password"
                   />
@@ -162,7 +162,7 @@ const Register = () => {
                     placeholder="••••••••"
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                    autoComplete="new-password"
+                    autoComplete="off"
                     name="home-register-confirm-password"
                     id="home-register-confirm-password"
                   />

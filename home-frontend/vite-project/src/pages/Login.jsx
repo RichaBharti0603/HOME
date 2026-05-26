@@ -124,7 +124,7 @@ const Login = () => {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="new-password"
+                  autoComplete="off"
                   name="home-login-password"
                   id="home-login-password"
                 />

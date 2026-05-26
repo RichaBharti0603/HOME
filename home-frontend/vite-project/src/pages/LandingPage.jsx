@@ -13,7 +13,7 @@ const LandingPage = () => {
     const warmup = async () => {
       try {
         console.log("Warming up backend...");
-        await api.get('/health');
+        await api.get('/health', { timeout: 10000 });
       } catch (err) {
         console.warn("Warmup failed (expected if backend cold starting):", err);
       }

@@ -21,6 +21,18 @@ class UserCreate(UserBase):
 class UserLogin(UserBase):
     password: str
 
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def clean_email(cls, value):
+        if isinstance(value, str):
+            return value.strip().lower()
+        return value
+
+
 class UserResponse(UserBase):
     id: int
 

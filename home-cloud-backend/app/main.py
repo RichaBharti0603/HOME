@@ -125,6 +125,34 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://home-frontend-fjvl.onrender.com",
+        "http://localhost:5173",
+        "http://localhost:3000"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.middleware("http")
+async def ensure_cors_headers(request, call_next):
+    try:
+        response = await call_next(request)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        return response
+    except Exception as e:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)},
+            headers={"Access-Control-Allow-Origin": "*"}
+        )
+
 # Fix: Register exception handlers AFTER the FastAPI app instance is created.
 # Previously, this was above the `app = FastAPI(...)` assignment, causing it 
 # to try and add a handler to the `app` module (from `import app.models...`).
@@ -134,31 +162,9 @@ async def global_exception_handler(request, exc):
     return JSONResponse(
         status_code=500,
         content={"error": str(exc)},
+        headers={"Access-Control-Allow-Origin": "*"}
     )
 
-origins = [
-    "https://home-frontend-fjvl.onrender.com",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5174",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
-
-# Proactively include dynamic frontend_url from settings
-if settings.frontend_url:
-    clean_frontend_url = settings.frontend_url.rstrip("/")
-    if clean_frontend_url not in origins:
-        origins.append(clean_frontend_url)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Phase 5: Logging Middleware (including Origin tracking)
 import time
@@ -204,10 +210,10 @@ def get_me_direct(current_user: User = Depends(get_current_user), db: Session = 
         "payment_status": tenant.payment_status if tenant else "none"
     }
 
-from app.schemas.user import UserCreate
+from app.schemas.user import RegisterRequest
 
 @app.post("/register", tags=["Auth"])
-async def register_direct(user_in: UserCreate, db: Session = Depends(get_db)):
+async def register_direct(user_in: RegisterRequest, db: Session = Depends(get_db)):
     from app.routes.auth import register
     return await register(user_in, db)
 
@@ -217,7 +223,7 @@ async def login_direct(request: Request, db: Session = Depends(get_db)):
     return await login(request, db)
 
 @app.get("/health")
-async def get_health():
+def health():
     return {"status": "ok"}
 
 @app.get("/test", tags=["System"])

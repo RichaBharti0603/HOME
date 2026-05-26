@@ -27,7 +27,7 @@ const OnboardingWizard = () => {
   const [formData, setFormData] = useState({
     url: '',
     project_name: '',
-    tracking_option: 'Is my website up/down',
+    tracking_option: 'uptime',
     alert_email: '',
     frequency: '5m',
     whatsapp_number: ''
@@ -120,16 +120,16 @@ const OnboardingWizard = () => {
   };
 
   const trackingOptions = [
-    { id: 'Is my website up/down', title: 'Is my website up/down', desc: 'Checks if your site is online' },
-    { id: 'Load speed', title: 'Load speed', desc: 'Measures page response speed' },
-    { id: 'Basic health alerts', title: 'Basic health alerts', desc: 'Monitors errors & health changes' }
+    { id: 'uptime', title: 'uptime', desc: 'Checks if your site is online' },
+    { id: 'speed', title: 'speed', desc: 'Measures page response speed' },
+    { id: 'basic health alerts', title: 'basic health alerts', desc: 'Monitors errors & health changes' }
   ];
 
   const frequencyOptions = [
-    { value: '1m', label: '1 min' },
-    { value: '5m', label: '5 min' },
-    { value: '15m', label: '15 min' },
-    { value: '60m', label: '1 hour' }
+    { value: '1m', label: '1m' },
+    { value: '5m', label: '5m' },
+    { value: '15m', label: '15m' },
+    { value: '60m', label: '1h' }
   ];
 
   if (loading) {
@@ -172,7 +172,7 @@ const OnboardingWizard = () => {
             {/* Website URL */}
             <div className="space-y-2">
               <label htmlFor="url" className="block text-sm font-extrabold text-gray-800">
-                Website Address <span className="text-red-500">*</span>
+                Website URL <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -184,6 +184,7 @@ const OnboardingWizard = () => {
                   className="premium-input w-full pl-12 bg-white/80 py-4 text-base rounded-2xl"
                   value={formData.url}
                   onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+                  autoComplete="off"
                 />
               </div>
               <p className="text-xs text-gray-400 pl-1">Enter the URL of the website you wish to monitor.</p>
@@ -203,6 +204,7 @@ const OnboardingWizard = () => {
                   className="premium-input w-full pl-12 bg-white/80 py-4 text-base rounded-2xl"
                   value={formData.project_name}
                   onChange={(e) => setFormData(prev => ({ ...prev, project_name: e.target.value }))}
+                  autoComplete="off"
                 />
               </div>
             </div>
@@ -210,7 +212,7 @@ const OnboardingWizard = () => {
             {/* What to track */}
             <div className="space-y-3">
               <label className="block text-sm font-extrabold text-gray-800">
-                What do you want to track?
+                What to monitor
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {trackingOptions.map(option => {
@@ -253,6 +255,7 @@ const OnboardingWizard = () => {
                     className="premium-input w-full pl-11 bg-white/80 py-3.5 text-sm rounded-2xl"
                     value={formData.alert_email}
                     onChange={(e) => setFormData(prev => ({ ...prev, alert_email: e.target.value }))}
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -293,6 +296,7 @@ const OnboardingWizard = () => {
                   className="premium-input w-full pl-11 bg-white/80 py-3.5 text-sm rounded-2xl"
                   value={formData.whatsapp_number}
                   onChange={(e) => setFormData(prev => ({ ...prev, whatsapp_number: e.target.value }))}
+                  autoComplete="off"
                 />
               </div>
             </div>

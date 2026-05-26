@@ -27,6 +27,9 @@ export const requestWithRetry = async (fn, retries = 5, delay = 2000, onRetry = 
   try {
     return await fn();
   } catch (err) {
+    if (err.response?.status >= 400 && err.response?.status < 500) {
+      throw err;
+    }
     const isNetworkOrServerError = !err.response || err.response.status >= 500 || err.response.status === 408;
     if (retries > 0 && isNetworkOrServerError) {
       console.log(`Connection retry triggered. Retrying in ${delay}ms... (${retries} left)`);
