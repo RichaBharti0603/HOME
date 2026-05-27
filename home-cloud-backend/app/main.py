@@ -76,7 +76,12 @@ def run_dynamic_migrations():
 
 
 def get_cors_origins() -> list[str]:
-    configured = [settings.frontend_url, *settings.cors_origins.split(",")]
+    configured = [
+        "https://home-frontend-fjvl.onrender.com",
+        "http://localhost:5173",
+        settings.frontend_url,
+        *settings.cors_origins.split(","),
+    ]
     return sorted({origin.strip().rstrip("/") for origin in configured if origin.strip()})
 
 # ============================================
@@ -164,14 +169,6 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=get_cors_origins(),
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # Fix: Register exception handlers AFTER the FastAPI app instance is created.
 # Previously, this was above the `app = FastAPI(...)` assignment, causing it 
 # to try and add a handler to the `app` module (from `import app.models...`).
@@ -201,6 +198,14 @@ async def log_requests(request, call_next):
     duration = time.time() - start_time
     logger.info(f"Request {request.url} took {duration:.4f}s | Status: {response.status_code}")
     return response
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_cors_origins(),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ============================================
 # Routers
