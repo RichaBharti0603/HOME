@@ -12,10 +12,9 @@ const LandingPage = () => {
     // Phase 4: Warm-up backend to handle cold starts on Render free tier
     const warmup = async () => {
       try {
-        console.log("Warming up backend...");
-        await api.get('/health', { timeout: 10000 });
-      } catch (err) {
-        console.warn("Warmup failed (expected if backend cold starting):", err);
+        await api.get('/health', { timeout: 5000 });
+      } catch (e) {
+        console.log("Warmup skipped (backend cold start)");
       }
     };
     warmup();

@@ -73,8 +73,10 @@ const Register = () => {
     } catch (err) {
       console.error("Registration error:", err);
       if (!err.response) {
+        console.log("Network issue or backend crash (Render cold start)");
         setError('Network Error: Cannot reach the server. The server is taking too long to start. Please try again in a few moments.');
       } else {
+        console.log("Backend error:", err.response.data);
         setError(err.response.data?.detail || 'Registration failed. Email may already be registered.');
       }
     } finally {

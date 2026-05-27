@@ -20,11 +20,14 @@ from datetime import datetime
 
 @router.post("/register", response_model=UserResponse)
 async def register(user_in: RegisterRequest, db: Session = Depends(get_db)):
-    email = user_in.email.strip().lower()
-    print("REGISTER HIT:", {"email": email})
-    start_time = time.time()
-    
     try:
+        if not user_in.email or not user_in.password:
+            raise HTTPException(status_code=400, detail="Email and password required")
+
+        email = user_in.email.strip().lower()
+        print("REGISTER HIT:", {"email": email})
+        start_time = time.time()
+        
         # Check if user exists
         existing = db.query(User).filter(User.email == email).first()
         if existing:
@@ -63,75 +66,83 @@ async def register(user_in: RegisterRequest, db: Session = Depends(get_db)):
         logger.info(f"/register took {time.time() - start_time:.4f}s")
         return db_user
     except HTTPException:
-        db.rollback()
+        # Avoid rolling back here, the DB layer will rollback via get_db if needed
+        # Or rollback if we caught it inside the transaction logic
         raise
     except Exception as e:
-        db.rollback()
-        print("REGISTER ERROR:", str(e))
-        # Log to loguru as well for cloud visibility
+        import traceback
+        traceback.print_exc()
         logger.error(f"REGISTER ERROR: {str(e)}")
-        raise e
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/login", response_model=Token)
 async def login(request: Request, db: Session = Depends(get_db)):
-    start_time = time.time()
-    content_type = request.headers.get("content-type", "")
-
-    if "application/json" in content_type:
-        payload = await request.json()
-        raw_email = payload.get("email") or payload.get("username")
-        raw_password = payload.get("password")
-    else:
-        form_data = await request.form()
-        raw_email = form_data.get("username") or form_data.get("email")
-        raw_password = form_data.get("password")
-
-    if not raw_email or not raw_password:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Login requires email and password.",
-        )
-
-    email = str(raw_email).strip().lower()
-    password = str(raw_password)
-    logger.info(f"LOGIN HIT email={email}")
-
-    user = db.query(User).filter(User.email == email).first()
-    logger.info(f"LOGIN LOOKUP email={email} found={bool(user)}")
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    # Phase 1: Non-blocking password verification
     try:
-        is_valid = await run_in_threadpool(verify_password, password, user.password)
-    except Exception as e:
-        logger.error(f"Password verification exception: {e}")
-        is_valid = False
+        start_time = time.time()
+        content_type = request.headers.get("content-type", "")
 
-    # Compatibility for any old rows accidentally saved as plain text.
-    if not is_valid and user.password == password:
-        user.password = await run_in_threadpool(get_password_hash, password)
-        db.commit()
-        is_valid = True
+        if "application/json" in content_type:
+            payload = await request.json()
+            raw_email = payload.get("email") or payload.get("username")
+            raw_password = payload.get("password")
+        else:
+            form_data = await request.form()
+            raw_email = form_data.get("username") or form_data.get("email")
+            raw_password = form_data.get("password")
 
-    if not is_valid:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
+        if not raw_email or not raw_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Login requires email and password.",
+            )
+
+        email = str(raw_email).strip().lower()
+        password = str(raw_password)
+        logger.info(f"LOGIN HIT email={email}")
+
+        user = db.query(User).filter(User.email == email).first()
+        logger.info(f"LOGIN LOOKUP email={email} found={bool(user)}")
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Phase 1: Non-blocking password verification
+        try:
+            is_valid = await run_in_threadpool(verify_password, password, user.password)
+        except Exception as e:
+            logger.error(f"Password verification exception: {e}")
+            is_valid = False
+
+        # Compatibility for any old rows accidentally saved as plain text.
+        if not is_valid and user.password == password:
+            user.password = await run_in_threadpool(get_password_hash, password)
+            db.commit()
+            is_valid = True
+
+        if not is_valid:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user.email}, expires_delta=access_token_expires
         )
-    
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
-    )
-    
-    logger.info(f"/login took {time.time() - start_time:.4f}s")
-    return {"access_token": access_token, "token_type": "bearer"}
+        
+        logger.info(f"/login took {time.time() - start_time:.4f}s")
+        return {"access_token": access_token, "token_type": "bearer"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        logger.error(f"LOGIN ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/users/me")
 def get_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

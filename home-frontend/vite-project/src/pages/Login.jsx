@@ -64,8 +64,10 @@ const Login = () => {
     } catch (err) {
       console.error('Login error:', err);
       if (!err.response) {
+        console.log("Network issue or backend crash (Render cold start)");
         setError('Connection failed. The server is taking too long to start. Please try again in a few moments.');
       } else {
+        console.log("Backend error:", err.response.data);
         setError(err.response.data?.detail || 'Invalid email or password. Please try again.');
       }
     } finally {

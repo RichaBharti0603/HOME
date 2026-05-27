@@ -90,20 +90,28 @@ async def lifespan(app: FastAPI):
         # Run RedisHealthGuard ping verification in background thread to prevent cold start blocking
         import threading
         def verify_redis():
-            RedisHealthGuard.ping_and_verify()
-            logger.info(f"Redis Status verified in background thread: {'Available' if RedisHealthGuard.is_available else 'Unavailable'}")
+            try:
+                RedisHealthGuard.ping_and_verify()
+                logger.info(f"Redis Status verified in background thread: {'Available' if RedisHealthGuard.is_available else 'Unavailable'}")
+            except Exception as e:
+                logger.error(f"Redis verification failed safely: {e}")
+                print("Redis disabled safely")
         
         threading.Thread(target=verify_redis, daemon=True).start()
         
         # Phase 2: Conditional Scheduler
         import os
         if os.getenv("ENABLE_SCHEDULER") == "true":
-            start_scheduler()
-            logger.info("Scheduler started successfully")
+            try:
+                start_scheduler()
+                logger.info("Scheduler started successfully")
+            except Exception as e:
+                logger.warning(f"Scheduler failed to start safely: {e}")
+                print("Scheduler disabled safely")
         else:
             logger.warning("Scheduler DISABLED via ENABLE_SCHEDULER env var")
     except Exception as e:
-        logger.error(f"Failed to start the scheduler: {e}")
+        logger.error(f"Failed to start the background tasks: {e}")
 
     # Log all registered routes for debug visibility
     for route in app.routes:
@@ -161,7 +169,7 @@ async def global_exception_handler(request, exc):
     logger.error(f"CRASH: {str(exc)}")
     return JSONResponse(
         status_code=500,
-        content={"error": str(exc)},
+        content={"detail": "Internal server error"},
         headers={"Access-Control-Allow-Origin": "*"}
     )
 
