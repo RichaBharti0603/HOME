@@ -11,8 +11,6 @@ from app.models.tenant import Tenant
 from app.schemas.user import RegisterRequest, UserResponse, Token
 from app.utils.security import get_password_hash, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_current_user
 
-from app.utils.security import get_password_hash, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_current_user
-
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 from fastapi.concurrency import run_in_threadpool
@@ -29,6 +27,10 @@ async def register(user_in: RegisterRequest, db: Session = Depends(get_db)):
         # Strict validation
         if not user_in.password or len(user_in.password) < 6:
             raise HTTPException(status_code=400, detail="Invalid input: password too short")
+
+        existing_user = db.query(User).filter(func.lower(User.email) == email).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Email already exists")
         
         # Phase 1: Non-blocking password hashing
         hashed_password = await run_in_threadpool(get_password_hash, user_in.password)
@@ -37,6 +39,7 @@ async def register(user_in: RegisterRequest, db: Session = Depends(get_db)):
         db_user = User(
             email=email,
             password=hashed_password,
+            onboarding_completed=False,
         )
         db.add(db_user)
         db.flush() # Send to DB to get ID without committing transaction

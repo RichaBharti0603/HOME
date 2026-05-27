@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from app.scheduler import start_scheduler
 from app.config import get_settings
@@ -21,32 +21,63 @@ from fastapi import Depends
 from app.models.user import User
 
 def run_dynamic_migrations():
-    from sqlalchemy import text
+    from sqlalchemy import inspect, text
     logger.info("Running dynamic migrations check...")
     try:
         with engine.connect() as conn:
             db_name = engine.url.drivername
+            inspector = inspect(conn)
+
+            def has_table(table_name: str) -> bool:
+                return inspector.has_table(table_name)
+
+            def columns_for(table_name: str) -> set[str]:
+                if not has_table(table_name):
+                    return set()
+                return {column["name"] for column in inspector.get_columns(table_name)}
+
+            user_columns = columns_for("users")
+            tenant_columns = columns_for("tenants")
+
+            def add_column_if_missing(table_name: str, column_name: str, ddl: str, existing_columns: set[str]):
+                if table_name in inspector.get_table_names() and column_name not in existing_columns:
+                    logger.info("Adding %s.%s column...", table_name, column_name)
+                    conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {ddl}"))
+                    existing_columns.add(column_name)
+
+            add_column_if_missing("users", "tenant_id", "INTEGER", user_columns)
+            add_column_if_missing("users", "onboarding_completed", "BOOLEAN DEFAULT FALSE", user_columns)
+            add_column_if_missing("users", "whatsapp_number", "VARCHAR", user_columns)
+            add_column_if_missing("tenants", "trial_ends_at", "TIMESTAMP", tenant_columns)
+            add_column_if_missing("tenants", "onboarding_complete", "BOOLEAN DEFAULT FALSE", tenant_columns)
+
             column_exists = False
-            if "sqlite" in db_name:
+            if has_table("notification_settings") and "sqlite" in db_name:
                 cursor = conn.execute(text("PRAGMA table_info(notification_settings)"))
                 cols = [row[1] for row in cursor.fetchall()]
                 column_exists = "whatsapp_number" in cols
-            else:
+            elif has_table("notification_settings"):
                 cursor = conn.execute(text(
                     "SELECT column_name FROM information_schema.columns "
                     "WHERE table_name='notification_settings' AND column_name='whatsapp_number'"
                 ))
                 column_exists = cursor.fetchone() is not None
             
-            if not column_exists:
+            if has_table("notification_settings") and not column_exists:
                 logger.info("Adding whatsapp_number column to notification_settings table...")
                 conn.execute(text("ALTER TABLE notification_settings ADD COLUMN whatsapp_number VARCHAR(80)"))
-                conn.commit()
                 logger.info("whatsapp_number column added successfully")
-            else:
+            elif has_table("notification_settings"):
                 logger.info("whatsapp_number column already exists")
+
+            conn.commit()
     except Exception as e:
         logger.error(f"Dynamic migration failed: {e}")
+
+
+def get_cors_origins() -> list[str]:
+    configured = [settings.frontend_url, *settings.cors_origins.split(",")]
+    return sorted({origin.strip().rstrip("/") for origin in configured if origin.strip()})
 
 # ============================================
 # Routers
@@ -133,33 +164,13 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-from fastapi.middleware.cors import CORSMiddleware
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://home-frontend-fjvl.onrender.com",
-        "http://localhost:5173",
-        "http://localhost:3000"
-    ],
+    allow_origins=get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.middleware("http")
-async def ensure_cors_headers(request, call_next):
-    try:
-        response = await call_next(request)
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        return response
-    except Exception as e:
-        from fastapi.responses import JSONResponse
-        return JSONResponse(
-            status_code=500,
-            content={"error": str(e)},
-            headers={"Access-Control-Allow-Origin": "*"}
-        )
 
 # Fix: Register exception handlers AFTER the FastAPI app instance is created.
 # Previously, this was above the `app = FastAPI(...)` assignment, causing it 
@@ -170,7 +181,6 @@ async def global_exception_handler(request, exc):
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal server error"},
-        headers={"Access-Control-Allow-Origin": "*"}
     )
 
 
@@ -182,7 +192,11 @@ async def log_requests(request, call_next):
     origin = request.headers.get("origin")
     logger.info(f"Incoming: {request.method} {request.url} | Origin: {origin}")
     
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+    except Exception:
+        logger.exception("Unhandled request failure")
+        raise
     
     duration = time.time() - start_time
     logger.info(f"Request {request.url} took {duration:.4f}s | Status: {response.status_code}")
@@ -205,8 +219,14 @@ app.include_router(ai.router)
 
 
 
-@app.get("/health")
-def health():
+@app.api_route("/health", methods=["GET", "HEAD", "OPTIONS"], include_in_schema=False)
+def health(request: Request):
+    if request.method in {"HEAD", "OPTIONS"}:
+        return Response(status_code=204)
+    return {"status": "ok"}
+
+@app.get("/healthz", tags=["System"])
+def healthz():
     return {"status": "ok"}
 
 @app.get("/test", tags=["System"])

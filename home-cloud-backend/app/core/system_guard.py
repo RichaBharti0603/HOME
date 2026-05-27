@@ -11,11 +11,18 @@ class RedisHealthGuard:
     @classmethod
     def ping_and_verify(cls):
         try:
-            r = redis.Redis.from_url(settings.celery_broker_url, socket_connect_timeout=3)
+            redis_url = settings.redis_url or settings.celery_broker_url
+            r = redis.Redis.from_url(
+                redis_url,
+                socket_connect_timeout=1,
+                socket_timeout=1,
+                retry_on_timeout=False,
+            )
             if r.ping():
                 cls.is_available = True
-                logger.info(f"RedisHealthGuard: Connected to {settings.celery_broker_url}")
+                logger.info("RedisHealthGuard: Connected")
             else:
+                cls.is_available = False
                 logger.warning("RedisHealthGuard: Ping returned False")
         except Exception as e:
             cls.is_available = False

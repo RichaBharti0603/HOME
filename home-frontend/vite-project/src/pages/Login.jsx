@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Mail, Lock, Shield, Activity, Zap, CheckCircle2 } from 'lucide-react';
-import api, { requestWithRetry } from '../utils/api';
+import api from '../utils/api';
 
 const Login = () => {
   const location = useLocation();
+  const formRef = useRef(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,12 +16,15 @@ const Login = () => {
   useEffect(() => {
     window.history.replaceState(null, '', window.location.href);
     localStorage.removeItem('auth-storage');
+    sessionStorage.removeItem('auth-storage');
     setEmail('');
     setPassword('');
     setError('');
+    formRef.current?.reset();
     const resetTimer = window.setTimeout(() => {
       setEmail('');
       setPassword('');
+      formRef.current?.reset();
     }, 0);
     return () => {
       window.clearTimeout(resetTimer);
@@ -50,22 +54,11 @@ const Login = () => {
       };
       console.log('LOGIN PAYLOAD:', { email: payload.email, password: '[hidden]' });
       
-      const response = await requestWithRetry(
-        () => api.post('/auth/login', payload),
-        5,
-        2000,
-        (retriesLeft, nextDelay) => {
-          setError(`Connecting to server... Server is starting up (cold start). Retrying in ${nextDelay / 1000}s...`);
-        }
-      );
+      const response = await api.post('/auth/login', payload);
       
       localStorage.setItem('token', response.data.access_token);
       
-      const meResponse = await requestWithRetry(
-        () => api.get('/auth/me', { headers: { Authorization: `Bearer ${response.data.access_token}` } }),
-        3,
-        1000
-      );
+      const meResponse = await api.get('/auth/me', { headers: { Authorization: `Bearer ${response.data.access_token}` } });
 
       setEmail('');
       setPassword('');
@@ -107,7 +100,7 @@ const Login = () => {
         </div>
 
         <div className="glass-card !p-8 bg-white border-gray-200 shadow-xl">
-          <form onSubmit={handleLogin} className="space-y-5" autoComplete="off">
+          <form ref={formRef} onSubmit={handleLogin} className="space-y-5" autoComplete="off">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-gray-700 ml-1">Email Address</label>
               <div className="relative">
@@ -119,7 +112,7 @@ const Login = () => {
                   placeholder="admin@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="off"
+                  autoComplete="new-password"
                   name="home-login-email"
                   id="home-login-email"
                 />
@@ -140,7 +133,7 @@ const Login = () => {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="off"
+                  autoComplete="new-password"
                   name="home-login-password"
                   id="home-login-password"
                 />

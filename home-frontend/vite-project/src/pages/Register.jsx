@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Lock } from 'lucide-react';
-import api, { requestWithRetry } from '../utils/api';
+import api from '../utils/api';
+
+const emptyForm = {
+  username: '',
+  email: '',
+  password: '',
+  confirmPassword: ''
+};
 
 const Register = () => {
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
+  const formRef = useRef(null);
+  const [formData, setFormData] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -17,29 +20,17 @@ const Register = () => {
   useEffect(() => {
     window.history.replaceState(null, '', window.location.href);
     localStorage.removeItem('auth-storage');
-    setFormData({
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: ''
-    });
+    sessionStorage.removeItem('auth-storage');
+    setFormData(emptyForm);
     setError('');
+    formRef.current?.reset();
     const resetTimer = window.setTimeout(() => {
-      setFormData({
-        username: '',
-        email: '',
-        password: '',
-        confirmPassword: ''
-      });
+      setFormData(emptyForm);
+      formRef.current?.reset();
     }, 0);
     return () => {
       window.clearTimeout(resetTimer);
-      setFormData({
-        username: '',
-        email: '',
-        password: '',
-        confirmPassword: ''
-      });
+      setFormData(emptyForm);
     };
   }, []);
 
@@ -58,17 +49,10 @@ const Register = () => {
       };
       console.log("REGISTER PAYLOAD:", { email: payload.email, password: '[hidden]' });
       
-      const response = await requestWithRetry(
-        () => api.post('/auth/register', payload),
-        5,
-        2000,
-        (retriesLeft, nextDelay) => {
-          setError(`Connecting to server... Server is starting up (cold start). Retrying in ${nextDelay / 1000}s...`);
-        }
-      );
+      const response = await api.post('/auth/register', payload);
       
       console.log("Registration successful:", response.data);
-      setFormData({ username: '', email: '', password: '', confirmPassword: '' });
+      setFormData(emptyForm);
       // Immediate redirect without blocking alert
       navigate('/login', { state: { message: 'Account created successfully! Please log in.' } });
     } catch (err) {
@@ -99,7 +83,7 @@ const Register = () => {
           </div>
 
           <div className="glass-card !p-8 bg-white border-gray-200 shadow-xl">
-            <form onSubmit={handleRegister} className="space-y-5" autoComplete="off">
+            <form ref={formRef} onSubmit={handleRegister} className="space-y-5" autoComplete="off">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-gray-700 ml-1">Full Name</label>
                 <div className="relative">
@@ -111,7 +95,7 @@ const Register = () => {
                     placeholder="Jane Doe"
                     value={formData.username}
                     onChange={(e) => setFormData({...formData, username: e.target.value})}
-                    autoComplete="off"
+                    autoComplete="new-password"
                     name="home-register-name"
                     id="home-register-name"
                   />
@@ -129,7 +113,7 @@ const Register = () => {
                     placeholder="jane@company.com"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    autoComplete="off"
+                    autoComplete="new-password"
                     name="home-register-email"
                     id="home-register-email"
                   />
@@ -147,7 +131,7 @@ const Register = () => {
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    autoComplete="off"
+                    autoComplete="new-password"
                     name="home-register-password"
                     id="home-register-password"
                   />
@@ -165,7 +149,7 @@ const Register = () => {
                     placeholder="••••••••"
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                    autoComplete="off"
+                    autoComplete="new-password"
                     name="home-register-confirm-password"
                     id="home-register-confirm-password"
                   />

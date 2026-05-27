@@ -7,8 +7,7 @@ settings = get_settings()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Use a static secret key for local development
-SECRET_KEY = "HOME_SUPER_SECRET_KEY_PRODUCTION_GRADE"
+SECRET_KEY = getattr(settings, "secret_key", None) or "HOME_SUPER_SECRET_KEY_PRODUCTION_GRADE"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 7 days
 
@@ -55,5 +54,4 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     if user is None:
         raise credentials_exception
     return user
-
 

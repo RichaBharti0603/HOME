@@ -5,6 +5,7 @@
 
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from pydantic import Field
 
 
 class Settings(BaseSettings):
@@ -12,6 +13,7 @@ class Settings(BaseSettings):
     app_name: str = "H.O.M.E"
     app_env: str = "development"
     debug: bool = True
+    secret_key: str = "HOME_SUPER_SECRET_KEY_PRODUCTION_GRADE"
 
     # Database — PostgreSQL
     database_url: str = "postgresql://user:password@localhost:5432/home"
@@ -26,6 +28,10 @@ class Settings(BaseSettings):
 
     # Frontend URL (for CORS)
     frontend_url: str = "http://localhost:5173"
+    cors_origins: str = Field(
+        default="http://localhost:5173,http://localhost:3000",
+        description="Comma-separated list of allowed browser origins.",
+    )
 
     # API Base URL (for internal references if needed)
     api_base_url: str = "http://localhost:8000"
