@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -8,6 +8,8 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
     password = Column(String)
+    onboarding_completed = Column(Boolean, default=False)
+    whatsapp_number = Column(String, nullable=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=True)
 
     # Relationships

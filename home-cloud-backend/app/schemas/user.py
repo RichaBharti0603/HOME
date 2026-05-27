@@ -23,7 +23,7 @@ class UserLogin(UserBase):
 
 class RegisterRequest(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(min_length=6)
 
     @field_validator("email", mode="before")
     @classmethod

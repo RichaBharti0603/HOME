@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from loguru import logger
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from datetime import timedelta
 
 from app.database import get_db
@@ -20,18 +21,14 @@ from datetime import datetime
 
 @router.post("/register", response_model=UserResponse)
 async def register(user_in: RegisterRequest, db: Session = Depends(get_db)):
+    email = user_in.email.strip().lower()
+    logger.info(f"REGISTER_START email={email}")
+    start_time = time.time()
+    
     try:
-        if not user_in.email or not user_in.password:
-            raise HTTPException(status_code=400, detail="Email and password required")
-
-        email = user_in.email.strip().lower()
-        print("REGISTER HIT:", {"email": email})
-        start_time = time.time()
-        
-        # Check if user exists
-        existing = db.query(User).filter(User.email == email).first()
-        if existing:
-            raise HTTPException(status_code=400, detail="User already exists")
+        # Strict validation
+        if not user_in.password or len(user_in.password) < 6:
+            raise HTTPException(status_code=400, detail="Invalid input: password too short")
         
         # Phase 1: Non-blocking password hashing
         hashed_password = await run_in_threadpool(get_password_hash, user_in.password)
@@ -42,10 +39,9 @@ async def register(user_in: RegisterRequest, db: Session = Depends(get_db)):
             password=hashed_password,
         )
         db.add(db_user)
-        db.commit()
-        db.refresh(db_user)
-
-        # Phase 1: Keep tenant creation simple and fast
+        db.flush() # Send to DB to get ID without committing transaction
+        
+        # Create tenant
         tenant = Tenant(
             owner_user_id=db_user.id,
             company_name=email.split("@")[0],
@@ -55,24 +51,29 @@ async def register(user_in: RegisterRequest, db: Session = Depends(get_db)):
             trial_ends_at=datetime.utcnow() + timedelta(days=7)
         )
         db.add(tenant)
-        db.commit()
-        db.refresh(tenant)
-
+        db.flush()
+        
+        # Link user to tenant
         db_user.tenant_id = tenant.id
+        
+        # Commit full transaction
         db.commit()
         db.refresh(db_user)
         
-        logger.info(f"REGISTER CREATED user_id={db_user.id} email={db_user.email} tenant_id={db_user.tenant_id}")
+        logger.info(f"REGISTER_SUCCESS user_id={db_user.id} tenant_id={db_user.tenant_id}")
         logger.info(f"/register took {time.time() - start_time:.4f}s")
         return db_user
+        
+    except IntegrityError:
+        db.rollback()
+        logger.warning(f"REGISTER_FAIL email={email} reason=IntegrityError (duplicate)")
+        raise HTTPException(status_code=400, detail="Email already exists")
     except HTTPException:
-        # Avoid rolling back here, the DB layer will rollback via get_db if needed
-        # Or rollback if we caught it inside the transaction logic
+        db.rollback()
         raise
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        logger.error(f"REGISTER ERROR: {str(e)}")
+        db.rollback()
+        logger.error(f"REGISTER_FAIL email={email} reason={type(e).__name__}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/login", response_model=Token)
