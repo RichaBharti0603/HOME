@@ -139,7 +139,20 @@ async def login(request: Request, db: Session = Depends(get_db)):
         )
         
         logger.info(f"/login took {time.time() - start_time:.4f}s")
-        return {"access_token": access_token, "token_type": "bearer"}
+        onboarding_completed = bool(user.onboarding_completed or (user.tenant and user.tenant.onboarding_complete))
+        if user.onboarding_completed != onboarding_completed:
+            user.onboarding_completed = onboarding_completed
+            db.commit()
+
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "onboarding_completed": onboarding_completed,
+            },
+        }
     except HTTPException:
         raise
     except Exception as e:
@@ -151,11 +164,13 @@ async def login(request: Request, db: Session = Depends(get_db)):
 @router.get("/me")
 def get_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     tenant = current_user.tenant
+    onboarding_completed = bool(current_user.onboarding_completed or (tenant and tenant.onboarding_complete))
     return {
         "id": current_user.id,
         "email": current_user.email,
         "tenant_id": current_user.tenant_id,
-        "onboarding_complete": tenant.onboarding_complete if tenant else False,
+        "onboarding_completed": onboarding_completed,
+        "onboarding_complete": onboarding_completed,
         "subscription_plan": tenant.subscription_plan if tenant else "none",
         "payment_status": tenant.payment_status if tenant else "none"
     }

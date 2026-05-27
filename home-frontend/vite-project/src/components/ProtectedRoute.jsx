@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import api, { requestWithRetry } from '../utils/api';
+import { clearAuthSession, getStoredUser, setAuthSession } from '../utils/auth';
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, requireOnboarding = true, setupOnly = false }) => {
   const token = localStorage.getItem('token');
   const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [wakingUp, setWakingUp] = useState(false);
   const [isAllowed, setIsAllowed] = useState(false);
-  const [shouldRedirectSetup, setShouldRedirectSetup] = useState(false);
+  const [redirectTo, setRedirectTo] = useState('');
 
   useEffect(() => {
     if (!token) {
@@ -17,7 +18,14 @@ const ProtectedRoute = ({ children }) => {
     }
 
     if (token === 'demo-token') {
-      setIsAllowed(true);
+      const demoUser = getStoredUser() || { id: 'demo', email: 'demo@home.ai', onboarding_completed: false };
+      if (setupOnly && demoUser.onboarding_completed) {
+        setRedirectTo('/dashboard');
+      } else if (requireOnboarding && !demoUser.onboarding_completed && !setupOnly) {
+        setRedirectTo('/setup');
+      } else {
+        setIsAllowed(true);
+      }
       setLoading(false);
       return;
     }
@@ -30,22 +38,25 @@ const ProtectedRoute = ({ children }) => {
           2000,
           () => setWakingUp(true)
         );
-        const paidOrTrial = ['active', 'trial', 'pending'].includes(res.data.payment_status);
-        if (res.data.onboarding_complete && paidOrTrial) {
-          setIsAllowed(true);
+        const onboardingCompleted = Boolean(res.data.onboarding_completed ?? res.data.onboarding_complete);
+        setAuthSession(token, {
+          id: res.data.id,
+          email: res.data.email,
+          onboarding_completed: onboardingCompleted,
+        });
+
+        if (setupOnly && onboardingCompleted) {
+          setRedirectTo('/dashboard');
+        } else if (requireOnboarding && !onboardingCompleted) {
+          setRedirectTo('/setup');
         } else {
-          if (location.pathname === '/setup') {
-             setIsAllowed(true);
-          } else {
-             setShouldRedirectSetup(true);
-          }
+          setIsAllowed(true);
         }
       } catch (err) {
         console.error('Auth verification failed:', err);
         // Only remove token if it's explicitly an auth status error (401/403)
         if (err.response && [401, 403].includes(err.response.status)) {
-          localStorage.removeItem('token');
-          sessionStorage.clear();
+          clearAuthSession();
         }
       } finally {
         setWakingUp(false);
@@ -82,8 +93,8 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (shouldRedirectSetup) {
-    return <Navigate to="/setup" replace />;
+  if (redirectTo) {
+    return <Navigate to={redirectTo} replace />;
   }
 
   if (isAllowed) {

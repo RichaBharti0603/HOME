@@ -187,6 +187,7 @@ def complete_onboarding(db: Session, user: User, data: OnboardingSetupRequest) -
     monitor_ids.add(monitor.id)
     onboarding.created_monitor_ids = list(monitor_ids)
     tenant.onboarding_complete = True
+    user.onboarding_completed = True
 
     db.commit()
     db.refresh(monitor)

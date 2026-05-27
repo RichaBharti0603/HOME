@@ -35,13 +35,18 @@ class RegisterRequest(BaseModel):
 
 class UserResponse(UserBase):
     id: int
+    onboarding_completed: bool = False
 
     class Config:
         from_attributes = True
 
+class AuthUserResponse(UserResponse):
+    pass
+
 class Token(BaseModel):
     access_token: str
     token_type: str
+    user: AuthUserResponse
 
 class TokenData(BaseModel):
     email: str | None = None

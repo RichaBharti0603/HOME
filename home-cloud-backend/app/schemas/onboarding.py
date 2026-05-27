@@ -54,6 +54,7 @@ class OnboardingSetupResponse(BaseModel):
 
 
 class OnboardingStatusResponse(BaseModel):
+    onboarding_completed: bool
     onboarding_complete: bool
     trial_ends_at: Optional[str] = None
     website_url: Optional[str] = None
@@ -66,4 +67,3 @@ class OnboardingStatusResponse(BaseModel):
     weekly_reports: bool = False
     created_monitor_ids: List[int] = Field(default_factory=list)
     whatsapp_number: Optional[str] = None
-

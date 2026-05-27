@@ -43,6 +43,20 @@ function App() {
         } />
         
         <Route path="/onboarding/setup" element={
+          <Navigate to="/setup" replace />
+        } />
+
+        <Route path="/setup" element={
+          <ProtectedRoute requireOnboarding={false} setupOnly>
+            <Setup />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/home" element={
+          <Navigate to="/dashboard" replace />
+        } />
+
+        <Route path="/onboarding/setup-old" element={
           <ProtectedRoute>
             <OnboardingWizard />
           </ProtectedRoute>

@@ -1,200 +1,230 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Zap, Globe, Clock, Shield, 
-  ArrowRight, Info, Plus, Server,
-  AlertCircle, CheckCircle2
-} from 'lucide-react';
+import { CheckCircle2, Globe, Loader2, Mail } from 'lucide-react';
 import api from '../utils/api';
-import { motion } from 'framer-motion';
+import { getStoredUser, updateStoredUser } from '../utils/auth';
+
+const normalizeUrl = (value) => {
+  const cleaned = value.trim();
+  if (!cleaned) return '';
+  return /^https?:\/\//i.test(cleaned) ? cleaned : `https://${cleaned}`;
+};
 
 const Setup = () => {
-  const [formData, setFormData] = useState({
-    project_name: '',
-    url: '',
-    frequency: '1m',
-    alert_email: ''
-  });
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const storedUser = getStoredUser();
+  const [formData, setFormData] = useState({
+    url: '',
+    project_name: '',
+    frequency: '5m',
+    alert_email: storedUser?.email || '',
+    alert_method: 'email',
+  });
+  const [loadingUser, setLoadingUser] = useState(!storedUser?.email);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  useEffect(() => {
+    const loadUser = async () => {
+      if (storedUser?.email || localStorage.getItem('token') === 'demo-token') {
+        setLoadingUser(false);
+        return;
+      }
+
+      try {
+        const response = await api.get('/auth/me');
+        const user = {
+          id: response.data.id,
+          email: response.data.email,
+          onboarding_completed: Boolean(response.data.onboarding_completed ?? response.data.onboarding_complete),
+        };
+        updateStoredUser(user);
+        setFormData((prev) => ({ ...prev, alert_email: user.email || prev.alert_email }));
+      } catch (err) {
+        if (err.response?.status === 401) {
+          navigate('/login', { replace: true });
+        }
+      } finally {
+        setLoadingUser(false);
+      }
+    };
+
+    loadUser();
+  }, [navigate, storedUser?.email]);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
-    
-    // Mock for demo token
-    if (localStorage.getItem('token') === 'demo-token') {
-      setTimeout(() => {
-        setSuccess(true);
-        setTimeout(() => navigate('/dashboard'), 1500);
-      }, 1000);
-      return;
-    }
+    setSubmitting(true);
 
     try {
-      await api.post('/monitors', formData);
-      setSuccess(true);
-      setTimeout(() => navigate('/dashboard'), 1500);
+      const normalizedUrl = normalizeUrl(formData.url);
+      if (!normalizedUrl) {
+        setError('Please enter your website URL.');
+        setSubmitting(false);
+        return;
+      }
+
+      if (localStorage.getItem('token') !== 'demo-token') {
+        await api.post('/onboarding/setup', {
+          url: normalizedUrl,
+          project_name: formData.project_name.trim() || null,
+          website_type: 'Website',
+          notify_email: formData.alert_method === 'email',
+          notify_dashboard: true,
+          alert_email: formData.alert_email.trim(),
+          weekly_reports: false,
+          frequency: formData.frequency,
+          whatsapp_number: formData.alert_method === 'whatsapp' ? '' : null,
+          alert_sensitivity: 'Normal',
+        });
+
+        await api.put('/onboarding/complete');
+      }
+
+      updateStoredUser({ onboarding_completed: true });
+      navigate('/dashboard', { replace: true });
     } catch (err) {
-      setError('Could not add website. Please check the URL and try again.');
+      console.error('Setup failed:', err);
+      setError(err.response?.data?.detail || 'We could not save this yet. Please check the website URL and try again.');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const frequencies = [
-    { value: '30s', label: 'Real-time (30s)', pulse: true },
-    { value: '1m', label: 'Active (1m)', pulse: false },
-    { value: '5m', label: 'Balanced (5m)', pulse: false },
-    { value: '15m', label: 'Economy (15m)', pulse: false },
-  ];
+  if (loadingUser) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="animate-spin text-indigo-600" size={28} />
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-10 py-6">
-      <header>
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">Add Your Website</h1>
-        <p className="text-gray-500 font-medium">Enter your website details below to start monitoring its health.</p>
-      </header>
+    <main className="min-h-screen bg-gray-50 px-4 py-10 flex justify-center">
+      <section className="w-full max-w-2xl bg-white border border-gray-200 rounded-lg shadow-sm p-6 sm:p-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Let&apos;s set up your website monitoring</h1>
+          <p className="mt-2 text-sm text-gray-500">A few details so we know what to check and where to notify you.</p>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* FORM SECTION */}
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="lg:col-span-2 glass-card bg-white border-gray-200"
-        >
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="space-y-5">
-               <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700 ml-1">Website Name</label>
-                  <div className="relative">
-                    <Server className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input 
-                      type="text" 
-                      required
-                      placeholder="e.g. My Online Store"
-                      className="premium-input w-full pl-12 bg-white"
-                      value={formData.project_name}
-                      onChange={(e) => setFormData({...formData, project_name: e.target.value})}
-                    />
-                  </div>
-               </div>
-
-               <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700 ml-1">Website URL</label>
-                  <div className="relative">
-                    <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input 
-                      type="url" 
-                      required
-                      placeholder="https://www.mywebsite.com"
-                      className="premium-input w-full pl-12 bg-white font-mono text-sm"
-                      value={formData.url}
-                      onChange={(e) => setFormData({...formData, url: e.target.value})}
-                    />
-                  </div>
-               </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="url" className="block text-sm font-semibold text-gray-800 mb-2">
+              Website URL <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <Globe className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                id="url"
+                type="text"
+                required
+                value={formData.url}
+                onChange={(event) => setFormData((prev) => ({ ...prev, url: event.target.value }))}
+                placeholder="https://example.com"
+                className="premium-input w-full pl-10 bg-white"
+              />
             </div>
+          </div>
 
-            <div className="space-y-4">
-               <label className="text-sm font-semibold text-gray-700 ml-1">Check Frequency</label>
-               <div className="grid grid-cols-2 gap-3">
-                 {frequencies.map((freq) => (
-                   <button
-                    key={freq.value}
-                    type="button"
-                    onClick={() => setFormData({...formData, frequency: freq.value})}
-                    className={`
-                      p-4 rounded-xl border flex flex-col items-center gap-2 transition-all
-                      ${formData.frequency === freq.value 
-                        ? 'bg-indigo-50 border-accent-primary text-accent-primary shadow-sm' 
-                        : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'}
-                    `}
-                   >
-                     {freq.pulse && formData.frequency === freq.value && <div className="w-1.5 h-1.5 rounded-full bg-accent-primary animate-pulse"></div>}
-                     <span className="text-sm font-medium">{freq.label}</span>
-                   </button>
-                 ))}
-               </div>
-            </div>
+          <div>
+            <label htmlFor="project_name" className="block text-sm font-semibold text-gray-800 mb-2">
+              Website name
+            </label>
+            <input
+              id="project_name"
+              type="text"
+              value={formData.project_name}
+              onChange={(event) => setFormData((prev) => ({ ...prev, project_name: event.target.value }))}
+              placeholder="My website"
+              className="premium-input w-full bg-white"
+            />
+          </div>
 
-            <div className="space-y-2">
-               <label className="text-sm font-semibold text-gray-700 ml-1">Alert Email</label>
-               <div className="relative">
-                  <Plus className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <input 
-                    type="email" 
-                    placeholder="alerts@mywebsite.com"
-                    className="premium-input w-full pl-12 bg-white"
-                    value={formData.alert_email}
-                    onChange={(e) => setFormData({...formData, alert_email: e.target.value})}
-                  />
-               </div>
-               <p className="text-xs text-gray-500 ml-1 mt-1">We'll send notifications here if your site goes down.</p>
-            </div>
-
-            {error && (
-              <div className="p-3 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-medium animate-in fade-in">
-                {error}
-              </div>
-            )}
-
-            <button 
-              disabled={loading || success}
-              className={`premium-button w-full py-3.5 text-base font-semibold transition-all shadow-md ${
-                success ? 'bg-status-up hover:bg-status-up shadow-none' : ''
-              }`}
+          <div>
+            <label htmlFor="frequency" className="block text-sm font-semibold text-gray-800 mb-2">
+              Check interval
+            </label>
+            <select
+              id="frequency"
+              value={formData.frequency}
+              onChange={(event) => setFormData((prev) => ({ ...prev, frequency: event.target.value }))}
+              className="premium-input w-full bg-white"
             >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
-              ) : success ? (
-                <CheckCircle2 size={20} />
-              ) : (
-                <Plus size={20} />
-              )}
-              {loading ? 'Adding Website...' : success ? 'Website Added Successfully' : 'Add Website'}
-            </button>
-          </form>
-        </motion.div>
+              <option value="1m">1 min</option>
+              <option value="5m">5 min</option>
+              <option value="15m">15 min</option>
+              <option value="1h">1 hr</option>
+            </select>
+          </div>
 
-        {/* SIDEBAR INFO */}
-        <motion.div 
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="space-y-6"
-        >
-           <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-accent-primary mb-4">
-                 <Shield size={20} />
-              </div>
-              <h3 className="text-sm font-bold text-gray-900 mb-2">Private & Secure</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                We monitor your website from the outside. Your internal data, customer information, and code remain entirely private.
-              </p>
-           </div>
+          <div>
+            <label htmlFor="alert_email" className="block text-sm font-semibold text-gray-800 mb-2">
+              Alert email
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                id="alert_email"
+                type="email"
+                required
+                value={formData.alert_email}
+                onChange={(event) => setFormData((prev) => ({ ...prev, alert_email: event.target.value }))}
+                placeholder="you@example.com"
+                className="premium-input w-full pl-10 bg-white"
+              />
+            </div>
+          </div>
 
-           <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                 <Clock size={16} className="text-status-warn" />
-                 <span className="text-sm font-bold text-gray-900">Check Frequency</span>
-              </div>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                This determines how often we verify your site is online. <span className="text-gray-900 font-semibold">Real-time</span> checking is best for mission-critical stores and apps.
-              </p>
-           </div>
+          <div>
+            <span className="block text-sm font-semibold text-gray-800 mb-2">Alert method</span>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { value: 'email', label: 'Email' },
+                { value: 'whatsapp', label: 'WhatsApp' },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, alert_method: option.value }))}
+                  className={`h-12 rounded-md border text-sm font-semibold transition-colors ${
+                    formData.alert_method === option.value
+                      ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                      : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-           <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-100 flex items-start gap-3">
-              <Info className="text-accent-primary shrink-0 mt-0.5" size={18} />
-              <p className="text-sm text-accent-primary font-medium leading-relaxed">
-                Tip: You can change these settings later from your dashboard anytime.
-              </p>
-           </div>
-        </motion.div>
-      </div>
-    </div>
+          {error && (
+            <div className="rounded-md border border-red-100 bg-red-50 p-3 text-sm font-medium text-red-600">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="premium-button w-full py-3 text-base font-semibold"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="animate-spin" size={18} />
+                Saving...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 size={18} />
+                Start monitoring
+              </>
+            )}
+          </button>
+        </form>
+      </section>
+    </main>
   );
 };
 

@@ -18,13 +18,16 @@ def setup_onboarding(
     return complete_onboarding(db, current_user, data)
 
 
-@router.put("/complete", response_model=OnboardingSetupResponse)
+@router.put("/complete")
 def mark_onboarding_complete(
-    data: OnboardingSetupRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return complete_onboarding(db, current_user, data)
+    if current_user.tenant:
+        current_user.tenant.onboarding_complete = True
+    current_user.onboarding_completed = True
+    db.commit()
+    return {"onboarding_completed": True}
 
 @router.get("/status", response_model=OnboardingStatusResponse)
 def get_status(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
@@ -35,8 +38,14 @@ def get_status(db: Session = Depends(get_db), current_user: User = Depends(get_c
     onboarding = db.query(UserOnboarding).filter(UserOnboarding.user_id == current_user.id).first()
     notifications = onboarding.notification_settings if onboarding else None
 
+    onboarding_completed = bool(current_user.onboarding_completed or tenant.onboarding_complete)
+    if current_user.onboarding_completed != onboarding_completed:
+        current_user.onboarding_completed = onboarding_completed
+        db.commit()
+
     return OnboardingStatusResponse(
-        onboarding_complete=tenant.onboarding_complete,
+        onboarding_completed=onboarding_completed,
+        onboarding_complete=onboarding_completed,
         trial_ends_at=tenant.trial_ends_at.isoformat() if tenant.trial_ends_at else None,
         website_url=onboarding.website_url if onboarding else None,
         website_name=onboarding.website_name if onboarding else None,

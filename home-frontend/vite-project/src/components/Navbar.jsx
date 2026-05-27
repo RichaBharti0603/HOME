@@ -4,6 +4,7 @@ import { Shield, LayoutDashboard, Settings, MessageSquare, LogOut, Bell } from '
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import AlertPanel from './AlertPanel';
+import { clearAuthSession } from '../utils/auth';
 
 function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -15,8 +16,7 @@ const Navbar = () => {
   const token = localStorage.getItem('token');
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    sessionStorage.clear();
+    clearAuthSession();
     window.location.href = '/login';
   };
 

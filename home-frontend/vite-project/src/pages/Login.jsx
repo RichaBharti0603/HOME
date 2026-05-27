@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Mail, Lock, Shield, Activity, Zap, CheckCircle2 } from 'lucide-react';
 import api from '../utils/api';
+import { getStoredUser, setAuthSession } from '../utils/auth';
 
 const Login = () => {
   const location = useLocation();
@@ -14,6 +15,13 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const existingToken = localStorage.getItem('token');
+    const existingUser = getStoredUser();
+    if (existingToken && existingUser) {
+      navigate(existingUser.onboarding_completed ? '/dashboard' : '/setup', { replace: true });
+      return;
+    }
+
     window.history.replaceState(null, '', window.location.href);
     localStorage.removeItem('auth-storage');
     sessionStorage.removeItem('auth-storage');
@@ -41,8 +49,12 @@ const Login = () => {
     // Demo Mode Intercept
     if (email === 'demo@home.ai' && password === 'Demo@123') {
       setTimeout(() => {
-        localStorage.setItem('token', 'demo-token');
-        navigate('/onboarding/setup');
+        setAuthSession('demo-token', {
+          id: 'demo',
+          email: 'demo@home.ai',
+          onboarding_completed: false,
+        });
+        navigate('/setup', { replace: true });
       }, 800);
       return;
     }
@@ -55,18 +67,17 @@ const Login = () => {
       console.log('LOGIN PAYLOAD:', { email: payload.email, password: '[hidden]' });
       
       const response = await api.post('/auth/login', payload);
+      const user = response.data.user;
       
-      localStorage.setItem('token', response.data.access_token);
-      
-      const meResponse = await api.get('/auth/me', { headers: { Authorization: `Bearer ${response.data.access_token}` } });
+      setAuthSession(response.data.access_token, user);
 
       setEmail('');
       setPassword('');
 
-      if (!meResponse.data.onboarding_complete) {
-        navigate('/onboarding/setup');
+      if (!user.onboarding_completed) {
+        navigate('/setup', { replace: true });
       } else {
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
       }
     } catch (err) {
       console.error('Login error:', err);
