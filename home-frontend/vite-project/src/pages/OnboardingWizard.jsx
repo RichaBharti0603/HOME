@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Globe, Server, Mail, Clock, Phone, Activity, 
-  ShieldCheck, Loader2, ArrowRight, Sparkles 
-} from 'lucide-react';
+import { Globe, Server, Mail, Clock, ShieldCheck, Loader2, ArrowRight, Sparkles, Phone, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api, { requestWithRetry } from '../utils/api';
 
@@ -26,11 +23,11 @@ const OnboardingWizard = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     url: '',
-    project_name: '',
-    tracking_option: 'uptime',
+    tracking_option: 'Website uptime',
+    frequency: '15m',
     alert_email: '',
-    frequency: '5m',
-    whatsapp_number: ''
+    whatsapp_number: '',
+    alert_sensitivity: 'Normal'
   });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -46,7 +43,7 @@ const OnboardingWizard = () => {
       }
       try {
         const res = await requestWithRetry(
-          () => api.get('/auth/users/me'),
+          () => api.get('/auth/me'),
           5,
           2000
         );
@@ -83,14 +80,14 @@ const OnboardingWizard = () => {
       
       const payload = {
         url: normalizedUrl,
-        project_name: formData.project_name.trim() || undefined,
-        website_type: formData.tracking_option, // mapped to website_type in backend schema
+        website_type: formData.tracking_option,
         notify_email: true,
         notify_dashboard: true,
         alert_email: formData.alert_email.trim() || null,
         weekly_reports: true,
         frequency: formData.frequency,
-        whatsapp_number: formData.whatsapp_number.trim() || null
+        whatsapp_number: formData.whatsapp_number.trim() || null,
+        alert_sensitivity: formData.alert_sensitivity
       };
 
       if (localStorage.getItem('token') !== 'demo-token') {
@@ -120,17 +117,19 @@ const OnboardingWizard = () => {
   };
 
   const trackingOptions = [
-    { id: 'uptime', title: 'uptime', desc: 'Checks if your site is online' },
-    { id: 'speed', title: 'speed', desc: 'Measures page response speed' },
-    { id: 'basic health alerts', title: 'basic health alerts', desc: 'Monitors errors & health changes' }
+    'Website uptime',
+    'Page speed',
+    'API health (optional)',
+    'SSL expiry'
   ];
 
   const frequencyOptions = [
-    { value: '1m', label: '1m' },
-    { value: '5m', label: '5m' },
-    { value: '15m', label: '15m' },
-    { value: '60m', label: '1h' }
+    { value: '1m', label: 'Every 1 min' },
+    { value: '5m', label: 'Every 5 min' },
+    { value: '15m', label: 'Every 15 min (default)' }
   ];
+
+  const sensitivityOptions = ['Low', 'Normal', 'High'];
 
   if (loading) {
     return (
@@ -153,10 +152,10 @@ const OnboardingWizard = () => {
             <Sparkles size={14} className="text-indigo-600" /> Let's get started
           </div>
           <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight leading-none">
-            Monitor your website
+            Welcome! Let's setup your website
           </h1>
           <p className="text-gray-500 font-medium text-base">
-            Complete this simple 1-step form to start tracking your site's health and uptime.
+            Complete this simple form to start tracking your site's health and uptime.
           </p>
         </div>
 
@@ -172,7 +171,7 @@ const OnboardingWizard = () => {
             {/* Website URL */}
             <div className="space-y-2">
               <label htmlFor="url" className="block text-sm font-extrabold text-gray-800">
-                Website URL <span className="text-red-500">*</span>
+                What is your website link? <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -187,117 +186,100 @@ const OnboardingWizard = () => {
                   autoComplete="off"
                 />
               </div>
-              <p className="text-xs text-gray-400 pl-1">Enter the URL of the website you wish to monitor.</p>
-            </div>
-
-            {/* Website Name (Optional) */}
-            <div className="space-y-2">
-              <label htmlFor="project_name" className="block text-sm font-extrabold text-gray-800">
-                Website Name <span className="text-gray-400 font-normal">(Optional)</span>
-              </label>
-              <div className="relative">
-                <Server className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  id="project_name"
-                  type="text"
-                  placeholder="My Portfolio"
-                  className="premium-input w-full pl-12 bg-white/80 py-4 text-base rounded-2xl"
-                  value={formData.project_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, project_name: e.target.value }))}
-                  autoComplete="off"
-                />
-              </div>
             </div>
 
             {/* What to track */}
             <div className="space-y-3">
               <label className="block text-sm font-extrabold text-gray-800">
-                What to monitor
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {trackingOptions.map(option => {
-                  const isSelected = formData.tracking_option === option.id;
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, tracking_option: option.id }))}
-                      className={`
-                        p-4 rounded-2xl border text-center transition-all flex flex-col items-center justify-center gap-1.5
-                        ${isSelected 
-                          ? 'bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm font-bold' 
-                          : 'bg-white/80 border-gray-200 text-gray-600 hover:border-indigo-200 hover:bg-white'}
-                      `}
-                    >
-                      <span className="text-sm">{option.title}</span>
-                      <span className="text-[11px] text-gray-400 font-medium">{option.desc}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Alert Email & Check Frequency */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
-              {/* Alert Email */}
-              <div className="space-y-2">
-                <label htmlFor="alert_email" className="block text-sm font-extrabold text-gray-800">
-                  Alert Email
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <input
-                    id="alert_email"
-                    type="email"
-                    required
-                    placeholder="you@example.com"
-                    className="premium-input w-full pl-11 bg-white/80 py-3.5 text-sm rounded-2xl"
-                    value={formData.alert_email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, alert_email: e.target.value }))}
-                    autoComplete="off"
-                  />
-                </div>
-              </div>
-
-              {/* Check Frequency */}
-              <div className="space-y-2">
-                <label htmlFor="frequency" className="block text-sm font-extrabold text-gray-800">
-                  How often to check?
-                </label>
-                <div className="relative">
-                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <select
-                    id="frequency"
-                    className="premium-input w-full pl-11 pr-8 bg-white/80 py-3.5 text-sm rounded-2xl appearance-none cursor-pointer"
-                    value={formData.frequency}
-                    onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value }))}
-                  >
-                    {frequencyOptions.map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-            </div>
-
-            {/* WhatsApp Number (Optional) */}
-            <div className="space-y-2">
-              <label htmlFor="whatsapp_number" className="block text-sm font-extrabold text-gray-800">
-                WhatsApp Number <span className="text-gray-400 font-normal">(Optional, future-ready)</span>
+                What should we monitor?
               </label>
               <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input
-                  id="whatsapp_number"
-                  type="tel"
-                  placeholder="+1234567890"
-                  className="premium-input w-full pl-11 bg-white/80 py-3.5 text-sm rounded-2xl"
-                  value={formData.whatsapp_number}
-                  onChange={(e) => setFormData(prev => ({ ...prev, whatsapp_number: e.target.value }))}
-                  autoComplete="off"
-                />
+                 <Server className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                 <select
+                   className="premium-input w-full pl-11 pr-8 bg-white/80 py-3.5 text-sm rounded-2xl appearance-none cursor-pointer"
+                   value={formData.tracking_option}
+                   onChange={(e) => setFormData(prev => ({ ...prev, tracking_option: e.target.value }))}
+                 >
+                   {trackingOptions.map(opt => (
+                     <option key={opt} value={opt}>{opt}</option>
+                   ))}
+                 </select>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <label className="block text-sm font-extrabold text-gray-800">
+                How often should we check?
+              </label>
+              <div className="relative">
+                 <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                 <select
+                   className="premium-input w-full pl-11 pr-8 bg-white/80 py-3.5 text-sm rounded-2xl appearance-none cursor-pointer"
+                   value={formData.frequency}
+                   onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value }))}
+                 >
+                   {frequencyOptions.map(opt => (
+                     <option key={opt.value} value={opt.value}>{opt.label}</option>
+                   ))}
+                 </select>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 pt-6 mt-6">
+               <h3 className="text-sm font-extrabold text-gray-800 mb-4">Where should we notify you?</h3>
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                   <label htmlFor="alert_email" className="block text-xs font-semibold text-gray-600">
+                     Email (required)
+                   </label>
+                   <div className="relative">
+                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                     <input
+                       id="alert_email"
+                       type="email"
+                       required
+                       placeholder="you@example.com"
+                       className="premium-input w-full pl-11 bg-white/80 py-3.5 text-sm rounded-2xl"
+                       value={formData.alert_email}
+                       onChange={(e) => setFormData(prev => ({ ...prev, alert_email: e.target.value }))}
+                     />
+                   </div>
+                 </div>
+
+                 <div className="space-y-2">
+                   <label htmlFor="whatsapp_number" className="block text-xs font-semibold text-gray-600">
+                     WhatsApp (optional)
+                   </label>
+                   <div className="relative">
+                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                     <input
+                       id="whatsapp_number"
+                       type="tel"
+                       placeholder="+1234567890"
+                       className="premium-input w-full pl-11 bg-white/80 py-3.5 text-sm rounded-2xl"
+                       value={formData.whatsapp_number}
+                       onChange={(e) => setFormData(prev => ({ ...prev, whatsapp_number: e.target.value }))}
+                     />
+                   </div>
+                 </div>
+               </div>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <label className="block text-sm font-extrabold text-gray-800">
+                Alert sensitivity
+              </label>
+              <div className="relative">
+                 <AlertTriangle className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                 <select
+                   className="premium-input w-full pl-11 pr-8 bg-white/80 py-3.5 text-sm rounded-2xl appearance-none cursor-pointer"
+                   value={formData.alert_sensitivity}
+                   onChange={(e) => setFormData(prev => ({ ...prev, alert_sensitivity: e.target.value }))}
+                 >
+                   {sensitivityOptions.map(opt => (
+                     <option key={opt} value={opt}>{opt}</option>
+                   ))}
+                 </select>
               </div>
             </div>
 
@@ -324,7 +306,7 @@ const OnboardingWizard = () => {
               {submitting ? (
                 <>
                   <Loader2 className="animate-spin" size={20} />
-                  Configuring monitoring engine...
+                  Saving...
                 </>
               ) : (
                 <>

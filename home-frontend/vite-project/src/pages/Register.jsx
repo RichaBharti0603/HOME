@@ -68,6 +68,7 @@ const Register = () => {
       );
       
       console.log("Registration successful:", response.data);
+      setFormData({ username: '', email: '', password: '', confirmPassword: '' });
       // Immediate redirect without blocking alert
       navigate('/login', { state: { message: 'Account created successfully! Please log in.' } });
     } catch (err) {

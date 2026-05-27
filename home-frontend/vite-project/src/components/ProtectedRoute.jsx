@@ -25,7 +25,7 @@ const ProtectedRoute = ({ children }) => {
     const checkStatus = async () => {
       try {
         const res = await requestWithRetry(
-          () => api.get('/auth/users/me'),
+          () => api.get('/auth/me'),
           5,
           2000,
           () => setWakingUp(true)

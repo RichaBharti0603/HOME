@@ -203,32 +203,7 @@ from app.utils.websocket_manager import manager
 
 app.include_router(ai.router)
 
-# ============================================
-# Endpoints
-# ============================================
-@app.get("/users/me", tags=["Auth"])
-def get_me_direct(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    tenant = current_user.tenant
-    return {
-        "id": current_user.id,
-        "email": current_user.email,
-        "tenant_id": current_user.tenant_id,
-        "onboarding_complete": tenant.onboarding_complete if tenant else False,
-        "subscription_plan": tenant.subscription_plan if tenant else "none",
-        "payment_status": tenant.payment_status if tenant else "none"
-    }
 
-from app.schemas.user import RegisterRequest
-
-@app.post("/register", tags=["Auth"])
-async def register_direct(user_in: RegisterRequest, db: Session = Depends(get_db)):
-    from app.routes.auth import register
-    return await register(user_in, db)
-
-@app.post("/login", tags=["Auth"])
-async def login_direct(request: Request, db: Session = Depends(get_db)):
-    from app.routes.auth import login
-    return await login(request, db)
 
 @app.get("/health")
 def health():
@@ -244,3 +219,9 @@ async def root():
         "message": f"Welcome to {settings.app_name}",
         "docs": "/docs",
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    import os
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port)

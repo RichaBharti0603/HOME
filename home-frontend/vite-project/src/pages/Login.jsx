@@ -38,7 +38,7 @@ const Login = () => {
     if (email === 'demo@home.ai' && password === 'Demo@123') {
       setTimeout(() => {
         localStorage.setItem('token', 'demo-token');
-        navigate('/setup');
+        navigate('/onboarding/setup');
       }, 800);
       return;
     }
@@ -60,7 +60,21 @@ const Login = () => {
       );
       
       localStorage.setItem('token', response.data.access_token);
-      navigate('/setup');
+      
+      const meResponse = await requestWithRetry(
+        () => api.get('/auth/me', { headers: { Authorization: `Bearer ${response.data.access_token}` } }),
+        3,
+        1000
+      );
+
+      setEmail('');
+      setPassword('');
+
+      if (!meResponse.data.onboarding_complete) {
+        navigate('/onboarding/setup');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       console.error('Login error:', err);
       if (!err.response) {

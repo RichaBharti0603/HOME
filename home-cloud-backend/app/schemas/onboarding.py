@@ -11,6 +11,7 @@ class OnboardingSetupRequest(BaseModel):
     weekly_reports: bool = False
     frequency: Optional[str] = Field(default="60s", max_length=20)
     whatsapp_number: Optional[str] = Field(default=None, max_length=30)
+    alert_sensitivity: Optional[str] = Field(default="Normal", max_length=20)
 
     @field_validator("url")
     @classmethod

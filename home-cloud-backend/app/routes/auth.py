@@ -144,7 +144,7 @@ async def login(request: Request, db: Session = Depends(get_db)):
         logger.error(f"LOGIN ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-@router.get("/users/me")
+@router.get("/me")
 def get_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     tenant = current_user.tenant
     return {

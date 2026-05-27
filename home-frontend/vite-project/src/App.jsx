@@ -42,7 +42,7 @@ function App() {
           </ProtectedRoute>
         } />
         
-        <Route path="/setup" element={
+        <Route path="/onboarding/setup" element={
           <ProtectedRoute>
             <OnboardingWizard />
           </ProtectedRoute>
